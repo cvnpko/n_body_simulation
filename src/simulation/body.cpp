@@ -1,0 +1,6 @@
+namespace simulation
+{
+    class body
+    {
+    };
+}
