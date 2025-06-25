@@ -1,0 +1,3 @@
+/home/cvnpko/Desktop/MATF/MEH/seminarski/n_body_simulation/build/CMakeFiles/MyProject.dir
+/home/cvnpko/Desktop/MATF/MEH/seminarski/n_body_simulation/build/CMakeFiles/edit_cache.dir
+/home/cvnpko/Desktop/MATF/MEH/seminarski/n_body_simulation/build/CMakeFiles/rebuild_cache.dir
