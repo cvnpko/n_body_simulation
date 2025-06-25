@@ -1,4 +1,4 @@
-#include "body.hpp"
+#include "simulation/body.hpp"
 namespace sim
 {
     Body2d::Body2d(double mass, double x, double y, double vx, double vy)

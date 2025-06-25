@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(MyProject)
+project(NBodySimulation)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -17,9 +17,9 @@ file(GLOB_RECURSE SOURCES
     main.cpp
 )
 
-add_executable(MyProject ${SOURCES} ${GLAD_SRC})
+add_executable(NBodySimulation ${SOURCES} ${GLAD_SRC})
 
-target_link_libraries(MyProject
+target_link_libraries(NBodySimulation
     ${OPENGL_LIBRARIES}
     glfw
 )
