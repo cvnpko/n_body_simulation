@@ -1,1 +1,0 @@
-/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/MyProject.dir/link.d CMakeFiles/MyProject.dir/main.cpp.o CMakeFiles/MyProject.dir/src/gui/menu.cpp.o CMakeFiles/MyProject.dir/src/gui/shader.cpp.o CMakeFiles/MyProject.dir/src/simulation/body.cpp.o CMakeFiles/MyProject.dir/external/glad/src/glad.c.o -o MyProject  /usr/lib/libGL.so /usr/lib/libGLU.so /usr/lib/libglfw.so.3.4
