@@ -7,9 +7,9 @@ namespace sim
     {
     public:
         Body2d(double mass, double x, double y, double vx, double vy);
+        double mass, x, y, vx, vy;
 
     private:
-        double mass, x, y, vx, vy;
     };
     class Body3d
     {

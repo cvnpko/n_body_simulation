@@ -5,6 +5,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <math.h>
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -24,6 +25,9 @@ std::vector<sim::Body3d> bodies3d;
 std::vector<float> vertices;
 unsigned int shaderProgram = 0;
 unsigned int VBO = 0, VAO = 0;
+double currentTime;
+const double G = 6700.0;
+const double alpha = 5.0;
 
 int main()
 {
@@ -124,9 +128,9 @@ int main()
                              ImGuiWindowFlags_NoSavedSettings |
                              ImGuiWindowFlags_AlwaysAutoResize |
                              ImGuiWindowFlags_NoBackground);
-            static float mass1 = 0.1f, mass2 = 0.1f, mass3 = 0.1f;
+            static float mass1 = 50.0f, mass2 = 100.0f, mass3 = 200.0f;
             static float x1 = 200.0f, x2 = -300.0, x3 = 100.0f, y1 = -500.0f, y2 = 50.0f, y3 = 0.0f;
-            static float vx1 = 0.0f, vx2 = 0.0f, vx3 = 0.0f, vy1 = 0.0f, vy2 = 0.0f, vy3 = 0.0f;
+            static float vx1 = -30.0f, vx2 = 0.0f, vx3 = 0.0f, vy1 = 50.0f, vy2 = 0.0f, vy3 = 0.0f;
             ImGui::BeginGroup();
             ImVec2 button_size = ImVec2(140, 60);
             if (ImGui::Button("Start", button_size))
@@ -215,6 +219,7 @@ int main()
                 glEnableVertexAttribArray(0);
                 glBindBuffer(GL_ARRAY_BUFFER, 0);
                 glBindVertexArray(0);
+                currentTime = glfwGetTime();
                 state = sim::States::ThreeBody2DSim;
             }
             static bool trail = false;
@@ -228,7 +233,7 @@ int main()
             ImGui::BeginGroup();
             if (ImGui::InputFloat("mass1", &mass1, 0.1f, 1.0f, "%.2f"))
             {
-                if (mass1 < -1000.0)
+                if (mass1 < 0.1)
                 {
                     mass1 = 0.1;
                 }
@@ -283,7 +288,7 @@ int main()
             }
             if (ImGui::InputFloat("mass2", &mass2, 0.1f, 1.0f, "%.2f"))
             {
-                if (mass2 < -1000.0)
+                if (mass2 < 0.1)
                 {
                     mass2 = 0.1;
                 }
@@ -338,7 +343,7 @@ int main()
             }
             if (ImGui::InputFloat("mass3", &mass3, 0.1f, 1.0f, "%.2f"))
             {
-                if (mass3 < -1000.0)
+                if (mass3 < 0.1)
                 {
                     mass3 = 0.1;
                 }
@@ -397,10 +402,49 @@ int main()
         }
         break;
         case sim::States::ThreeBody2DSim:
+        {
             glUseProgram(shaderProgram);
             glBindVertexArray(VAO);
             glDrawArrays(GL_POINTS, 0, 3);
-            break;
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            double a[3][2];
+            double newTime = glfwGetTime();
+            for (int i = 0; i < 3; i++)
+            {
+                a[i][0] = 0, a[i][1] = 0;
+                for (int j = 0; j < 3; j++)
+                {
+                    if (i != j)
+                    {
+                        double dx = bodies2d[j].x - bodies2d[i].x;
+                        double dy = bodies2d[j].y - bodies2d[i].y;
+                        double distSqr = dx * dx + dy * dy + alpha * alpha;
+                        double invDist = 1.0 / sqrt(distSqr);
+                        double invDist3 = invDist * invDist * invDist;
+
+                        a[i][0] += G * bodies2d[j].mass * dx * invDist3;
+                        a[i][1] += G * bodies2d[j].mass * dy * invDist3;
+                    }
+                }
+            }
+            for (int i = 0; i < 3; i++)
+            {
+                bodies2d[i].vx += a[i][0] * (newTime - currentTime);
+                bodies2d[i].vy += a[i][1] * (newTime - currentTime);
+                bodies2d[i].x += bodies2d[i].vx * (newTime - currentTime);
+                bodies2d[i].y += bodies2d[i].vy * (newTime - currentTime);
+                vertices[i * 2] = bodies2d[i].x / 1000.0f;
+                vertices[i * 2 + 1] = bodies2d[i].y / 1000.0f;
+            }
+            void *ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(float), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+            if (ptr != NULL)
+            {
+                memcpy(ptr, vertices.data(), vertices.size() * sizeof(float));
+                glUnmapBuffer(GL_ARRAY_BUFFER);
+            }
+            currentTime = newTime;
+        }
+        break;
         case sim::States::TwoFixedBodyInit:
             break;
         case sim::States::TwoFixedBodySim:
