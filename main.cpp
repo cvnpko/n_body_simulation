@@ -226,7 +226,7 @@ int main()
             ImGui::Dummy(ImVec2(100.0f, 0.0f));
             ImGui::SameLine();
             ImGui::BeginGroup();
-            if (ImGui::InputFloat2("mass1", &mass1))
+            if (ImGui::InputFloat("mass1", &mass1, 0.1f, 1.0f, "%.2f"))
             {
                 if (mass1 < -1000.0)
                 {
@@ -237,7 +237,7 @@ int main()
                     mass1 = 1000.0;
                 }
             }
-            if (ImGui::InputFloat2("x1", &x1))
+            if (ImGui::InputFloat("x1", &x1, 0.1f, 1.0f, "%.2f"))
             {
                 if (x1 < -1000.0)
                 {
@@ -248,7 +248,7 @@ int main()
                     x1 = 1000.0;
                 }
             }
-            if (ImGui::InputFloat2("y1", &y1))
+            if (ImGui::InputFloat("y1", &y1, 0.1f, 1.0f, "%.2f"))
             {
                 if (y1 < -1000.0)
                 {
@@ -259,7 +259,7 @@ int main()
                     y1 = 1000.0;
                 }
             }
-            if (ImGui::InputFloat2("vx1", &vx1))
+            if (ImGui::InputFloat("vx1", &vx1, 0.1f, 1.0f, "%.2f"))
             {
                 if (vx1 < -1000.0)
                 {
@@ -270,7 +270,7 @@ int main()
                     vx1 = 1000.0;
                 }
             }
-            if (ImGui::InputFloat2("vy1", &vy1))
+            if (ImGui::InputFloat("vy1", &vy1, 0.1f, 1.0f, "%.2f"))
             {
                 if (vy1 < -1000.0)
                 {
@@ -281,7 +281,7 @@ int main()
                     vy1 = 1000.0;
                 }
             }
-            if (ImGui::InputFloat2("mass2", &mass2))
+            if (ImGui::InputFloat("mass2", &mass2, 0.1f, 1.0f, "%.2f"))
             {
                 if (mass2 < -1000.0)
                 {
@@ -292,7 +292,7 @@ int main()
                     mass2 = 1000.0;
                 }
             }
-            if (ImGui::InputFloat2("x2", &x2))
+            if (ImGui::InputFloat("x2", &x2, 0.1f, 1.0f, "%.2f"))
             {
                 if (x2 < -1000.0)
                 {
@@ -303,7 +303,7 @@ int main()
                     x2 = 1000.0;
                 }
             }
-            if (ImGui::InputFloat2("y2", &y2))
+            if (ImGui::InputFloat("y2", &y2, 0.1f, 1.0f, "%.2f"))
             {
                 if (y2 < -1000.0)
                 {
@@ -314,7 +314,7 @@ int main()
                     y2 = 1000.0;
                 }
             }
-            if (ImGui::InputFloat2("vx2", &vx2))
+            if (ImGui::InputFloat("vx2", &vx2, 0.1f, 1.0f, "%.2f"))
             {
                 if (vx2 < -1000.0)
                 {
@@ -325,7 +325,7 @@ int main()
                     vx2 = 1000.0;
                 }
             }
-            if (ImGui::InputFloat2("vy2", &vy2))
+            if (ImGui::InputFloat("vy2", &vy2, 0.1f, 1.0f, "%.2f"))
             {
                 if (vy2 < -1000.0)
                 {
@@ -336,7 +336,7 @@ int main()
                     vy2 = 1000.0;
                 }
             }
-            if (ImGui::InputFloat2("mass3", &mass3))
+            if (ImGui::InputFloat("mass3", &mass3, 0.1f, 1.0f, "%.2f"))
             {
                 if (mass3 < -1000.0)
                 {
@@ -347,7 +347,7 @@ int main()
                     mass3 = 1000.0;
                 }
             }
-            if (ImGui::InputFloat2("x3", &x3))
+            if (ImGui::InputFloat("x3", &x3, 0.1f, 1.0f, "%.2f"))
             {
                 if (x3 < -1000.0)
                 {
@@ -358,7 +358,7 @@ int main()
                     x3 = 1000.0;
                 }
             }
-            if (ImGui::InputFloat2("y3", &y3))
+            if (ImGui::InputFloat("y3", &y3, 0.1f, 1.0f, "%.2f"))
             {
                 if (y3 < -1000.0)
                 {
@@ -369,7 +369,7 @@ int main()
                     y3 = 1000.0;
                 }
             }
-            if (ImGui::InputFloat2("vx3", &vx3))
+            if (ImGui::InputFloat("vx3", &vx3, 0.1f, 1.0f, "%.2f"))
             {
                 if (vx3 < -1000.0)
                 {
@@ -380,7 +380,7 @@ int main()
                     vx3 = 1000.0;
                 }
             }
-            if (ImGui::InputFloat2("vy3", &vy3))
+            if (ImGui::InputFloat("vy3", &vy3, 0.1f, 1.0f, "%.2f"))
             {
                 if (vy3 < -1000.0)
                 {
@@ -441,7 +441,7 @@ void processInput(GLFWwindow *window)
     {
         glfwSetWindowShouldClose(window, true);
     }
-    if (glfwGetKey(window, GLFW_KEY_BACKSPACE) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
     {
         switch (state)
         {
