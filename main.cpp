@@ -2,6 +2,9 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <vector>
+#include <string>
+#include <fstream>
+#include <sstream>
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -11,6 +14,7 @@
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
+std::string readFile(std::string path);
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
@@ -18,6 +22,7 @@ sim::States state = sim::States::MENU;
 std::vector<sim::Body2d> bodies2d;
 std::vector<sim::Body3d> bodies3d;
 std::vector<float> values;
+unsigned int shaderProgram;
 
 int main()
 {
@@ -128,6 +133,49 @@ int main()
                 bodies2d.push_back(sim::Body2d(mass3, x3, y3, vx3, vy3));
                 values.clear();
                 state = sim::States::ThreeBody2DSim;
+
+                unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+                std::string vertexShaderSourceStr = readFile("resources/shaders/vertexShaders/threeBodies2d.ver");
+                const char *vertexShaderSource = vertexShaderSourceStr.c_str();
+                glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+                glCompileShader(vertexShader);
+                int success;
+                char infoLog[512];
+                glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+                if (!success)
+                {
+                    glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+                    std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
+                              << infoLog << std::endl;
+                }
+
+                unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+                std::string fragmentShaderSourceStr = readFile("resources/shaders/fragmentShaders/threeBodies2d.frag");
+                char const *fragmentShaderSource = fragmentShaderSourceStr.c_str();
+                glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+                glCompileShader(fragmentShader);
+                glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+                if (!success)
+                {
+                    glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+                    std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n"
+                              << infoLog << std::endl;
+                    return 1;
+                }
+                unsigned int shaderProgram = glCreateProgram();
+                glAttachShader(shaderProgram, vertexShader);
+                glAttachShader(shaderProgram, fragmentShader);
+                glLinkProgram(shaderProgram);
+                glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+                if (!success)
+                {
+                    glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+                    std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n"
+                              << infoLog << std::endl;
+                    return 1;
+                }
+                glDeleteShader(vertexShader);
+                glDeleteShader(fragmentShader);
             }
             static bool trail = false;
             ImGui::Checkbox("Trail", &trail);
@@ -380,4 +428,14 @@ void processInput(GLFWwindow *window)
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
     glViewport(0, 0, width, height);
+}
+
+std::string readFile(std::string path)
+{
+    std::ifstream file;
+    file.open(path);
+    std::stringstream ret;
+    ret << file.rdbuf();
+    file.close();
+    return ret.str();
 }
