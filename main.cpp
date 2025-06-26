@@ -14,6 +14,7 @@
 #include "simulation/simulation.hpp"
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void processInput(GLFWwindow *window);
 std::string readFile(std::string path);
 
@@ -45,6 +46,7 @@ int main()
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetKeyCallback(window, key_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -485,7 +487,26 @@ void processInput(GLFWwindow *window)
     {
         glfwSetWindowShouldClose(window, true);
     }
-    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+}
+
+void framebuffer_size_callback(GLFWwindow *window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+}
+
+std::string readFile(std::string path)
+{
+    std::ifstream file;
+    file.open(path);
+    std::stringstream ret;
+    ret << file.rdbuf();
+    file.close();
+    return ret.str();
+}
+
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_LEFT_CONTROL && action == GLFW_PRESS)
     {
         switch (state)
         {
@@ -508,19 +529,4 @@ void processInput(GLFWwindow *window)
             state = sim::States::MENU;
         }
     }
-}
-
-void framebuffer_size_callback(GLFWwindow *window, int width, int height)
-{
-    glViewport(0, 0, width, height);
-}
-
-std::string readFile(std::string path)
-{
-    std::ifstream file;
-    file.open(path);
-    std::stringstream ret;
-    ret << file.rdbuf();
-    file.close();
-    return ret.str();
 }
