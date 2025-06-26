@@ -8,6 +8,10 @@ namespace sim
         NBodyBigInit,
         NBodyBigSim,
         NBodySmallInit,
-        NBodySmallSim
+        NBodySmallSim,
+        TwoFixedBodyInit,
+        TwoFixedBodySim,
+        ThreeBody3DInit,
+        ThreeBody3DSim
     };
 }
