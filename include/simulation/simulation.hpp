@@ -1,3 +1,5 @@
+#ifndef STATES_HPP
+#define STATES_HPP
 namespace sim
 {
     enum class States
@@ -15,3 +17,4 @@ namespace sim
         ThreeBody3DSim
     };
 }
+#endif

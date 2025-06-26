@@ -1,10 +1,12 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <vector>
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
+#include "simulation/body.hpp"
 #include "simulation/simulation.hpp"
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
@@ -13,6 +15,9 @@ void processInput(GLFWwindow *window);
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 sim::States state = sim::States::MENU;
+std::vector<sim::Body2d> bodies2d;
+std::vector<sim::Body3d> bodies3d;
+std::vector<float> values;
 
 int main()
 {
@@ -98,7 +103,211 @@ int main()
         }
         break;
         case sim::States::ThreeBody2DInit:
-            break;
+        {
+            ImGuiIO &io = ImGui::GetIO();
+            ImVec2 window_size = ImVec2(io.DisplaySize.x, io.DisplaySize.y);
+            ImVec2 window_pos = ImVec2(0.0f, 0.0f);
+            ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
+            ImGui::SetNextWindowBgAlpha(0.0f);
+            ImGui::Begin("Controls", nullptr,
+                         ImGuiWindowFlags_NoDecoration |
+                             ImGuiWindowFlags_NoMove |
+                             ImGuiWindowFlags_NoSavedSettings |
+                             ImGuiWindowFlags_AlwaysAutoResize |
+                             ImGuiWindowFlags_NoBackground);
+            static double mass1 = 0.1, mass2 = 0.1, mass3 = 0.1;
+            static double x1 = 0, x2 = 0, x3 = 0, y1 = 0, y2 = 0, y3 = 0;
+            static double vx1 = 0, vx2 = 0, vx3 = 0, vy1 = 0, vy2 = 0, vy3 = 0;
+            ImGui::BeginGroup();
+            ImVec2 button_size = ImVec2(140, 60);
+            if (ImGui::Button("Start", button_size))
+            {
+                bodies2d.clear();
+                bodies2d.push_back(sim::Body2d(mass1, x1, y1, vx1, vy1));
+                bodies2d.push_back(sim::Body2d(mass2, x2, y2, vx2, vy2));
+                bodies2d.push_back(sim::Body2d(mass3, x3, y3, vx3, vy3));
+                values.clear();
+                state = sim::States::ThreeBody2DSim;
+            }
+            static bool trail = false;
+            ImGui::Checkbox("Trail", &trail);
+
+            ImGui::EndGroup();
+            ImGui::SameLine();
+            ImGui::BeginGroup();
+            ImGui::Dummy(ImVec2(100.0f, 0.0f));
+            ImGui::SameLine();
+            ImGui::BeginGroup();
+            if (ImGui::InputDouble("mass1", &mass1, 0.1, 1.0, "%.2f"))
+            {
+                if (mass1 < -1000.0)
+                {
+                    mass1 = 0.1;
+                }
+                if (mass1 > 1000.0)
+                {
+                    mass1 = 1000.0;
+                }
+            }
+            if (ImGui::InputDouble("x1", &x1, 0.1, 1.0, "%.2f"))
+            {
+                if (x1 < -1000.0)
+                {
+                    x1 = -1000.0;
+                }
+                if (x1 > 1000.0)
+                {
+                    x1 = 1000.0;
+                }
+            }
+            if (ImGui::InputDouble("y1", &y1, 0.1, 1.0, "%.2f"))
+            {
+                if (y1 < -1000.0)
+                {
+                    y1 = -1000.0;
+                }
+                if (y1 > 1000.0)
+                {
+                    y1 = 1000.0;
+                }
+            }
+            if (ImGui::InputDouble("vx1", &vx1, 0.1, 1.0, "%.2f"))
+            {
+                if (vx1 < -1000.0)
+                {
+                    vx1 = -1000.0;
+                }
+                if (vx1 > 1000.0)
+                {
+                    vx1 = 1000.0;
+                }
+            }
+            if (ImGui::InputDouble("vy1", &vy1, 0.1, 1.0, "%.2f"))
+            {
+                if (vy1 < -1000.0)
+                {
+                    vy1 = -1000.0;
+                }
+                if (vy1 > 1000.0)
+                {
+                    vy1 = 1000.0;
+                }
+            }
+            if (ImGui::InputDouble("mass2", &mass2, 0.1, 1.0, "%.2f"))
+            {
+                if (mass2 < -1000.0)
+                {
+                    mass2 = 0.1;
+                }
+                if (mass2 > 1000.0)
+                {
+                    mass2 = 1000.0;
+                }
+            }
+            if (ImGui::InputDouble("x2", &x2, 0.1, 1.0, "%.2f"))
+            {
+                if (x2 < -1000.0)
+                {
+                    x2 = -1000.0;
+                }
+                if (x2 > 1000.0)
+                {
+                    x2 = 1000.0;
+                }
+            }
+            if (ImGui::InputDouble("y2", &y2, 0.1, 1.0, "%.2f"))
+            {
+                if (y2 < -1000.0)
+                {
+                    y2 = -1000.0;
+                }
+                if (y2 > 1000.0)
+                {
+                    y2 = 1000.0;
+                }
+            }
+            if (ImGui::InputDouble("vx2", &vx2, 0.1, 1.0, "%.2f"))
+            {
+                if (vx2 < -1000.0)
+                {
+                    vx2 = -1000.0;
+                }
+                if (vx2 > 1000.0)
+                {
+                    vx2 = 1000.0;
+                }
+            }
+            if (ImGui::InputDouble("vy2", &vy2, 0.1, 1.0, "%.2f"))
+            {
+                if (vy2 < -1000.0)
+                {
+                    vy2 = -1000.0;
+                }
+                if (vy2 > 1000.0)
+                {
+                    vy2 = 1000.0;
+                }
+            }
+            if (ImGui::InputDouble("mass3", &mass3, 0.1, 1.0, "%.2f"))
+            {
+                if (mass3 < -1000.0)
+                {
+                    mass3 = 0.1;
+                }
+                if (mass3 > 1000.0)
+                {
+                    mass3 = 1000.0;
+                }
+            }
+            if (ImGui::InputDouble("x3", &x3, 0.1, 1.0, "%.2f"))
+            {
+                if (x3 < -1000.0)
+                {
+                    x3 = -1000.0;
+                }
+                if (x3 > 1000.0)
+                {
+                    x3 = 1000.0;
+                }
+            }
+            if (ImGui::InputDouble("y3", &y3, 0.1, 1.0, "%.2f"))
+            {
+                if (y3 < -1000.0)
+                {
+                    y3 = -1000.0;
+                }
+                if (y3 > 1000.0)
+                {
+                    y3 = 1000.0;
+                }
+            }
+            if (ImGui::InputDouble("vx3", &vx3, 0.1, 1.0, "%.2f"))
+            {
+                if (vx3 < -1000.0)
+                {
+                    vx3 = -1000.0;
+                }
+                if (vx3 > 1000.0)
+                {
+                    vx3 = 1000.0;
+                }
+            }
+            if (ImGui::InputDouble("vy3", &vy3, 0.1, 1.0, "%.2f"))
+            {
+                if (vy3 < -1000.0)
+                {
+                    vy3 = -1000.0;
+                }
+                if (vy3 > 1000.0)
+                {
+                    vy3 = 1000.0;
+                }
+            }
+            ImGui::EndGroup();
+            ImGui::EndGroup();
+            ImGui::End();
+        }
+        break;
         case sim::States::ThreeBody2DSim:
             break;
         case sim::States::TwoFixedBodyInit:
