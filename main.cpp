@@ -12,6 +12,7 @@ void processInput(GLFWwindow *window);
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+sim::States state = sim::States::MENU;
 
 int main()
 {
@@ -45,8 +46,6 @@ int main()
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330 core");
 
-    sim::States state = sim::States::MENU;
-
     while (!glfwWindowShouldClose(window))
     {
         processInput(window);
@@ -57,17 +56,12 @@ int main()
         {
         case sim::States::MENU:
         {
-
             ImGuiIO &io = ImGui::GetIO();
             ImVec2 window_size = ImVec2(io.DisplaySize.x / 2.0f, io.DisplaySize.y);
-            ImVec2 window_pos = ImVec2(
-                (io.DisplaySize.x - window_size.x) * 0.5f,
-                0.0f);
-
+            ImVec2 window_pos = ImVec2((io.DisplaySize.x - window_size.x) * 0.5f, 0.0f);
             ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
             ImGui::SetNextWindowBgAlpha(0.0f);
-
-            ImGui::Begin("Kontrole", nullptr,
+            ImGui::Begin("Controls", nullptr,
                          ImGuiWindowFlags_NoDecoration |
                              ImGuiWindowFlags_NoMove |
                              ImGuiWindowFlags_NoSavedSettings |
@@ -100,7 +94,6 @@ int main()
             {
                 state = sim::States::ThreeBody3DInit;
             }
-
             ImGui::End();
         }
         break;
@@ -149,6 +142,29 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
         glfwSetWindowShouldClose(window, true);
+    }
+    if (glfwGetKey(window, GLFW_KEY_BACKSPACE) == GLFW_PRESS)
+    {
+        switch (state)
+        {
+        case sim::States::NBodyBigSim:
+            state = sim::States::NBodyBigInit;
+            break;
+        case sim::States::NBodySmallSim:
+            state = sim::States::NBodySmallInit;
+            break;
+        case sim::States::TwoFixedBodySim:
+            state = sim::States::TwoFixedBodyInit;
+            break;
+        case sim::States::ThreeBody2DSim:
+            state = sim::States::ThreeBody2DInit;
+            break;
+        case sim::States::ThreeBody3DSim:
+            state = sim::States::ThreeBody3DInit;
+            break;
+        default:
+            state = sim::States::MENU;
+        }
     }
 }
 
