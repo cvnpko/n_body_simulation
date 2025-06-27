@@ -3,8 +3,6 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <fstream>
-#include <sstream>
 #include <math.h>
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -12,11 +10,11 @@
 
 #include "simulation/body.hpp"
 #include "simulation/simulation.hpp"
+#include "gui/shader.hpp"
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void processInput(GLFWwindow *window);
-std::string readFile(std::string path);
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
@@ -24,7 +22,7 @@ sim::States state = sim::States::MENU;
 std::vector<sim::Body2d> bodies2d;
 std::vector<sim::Body3d> bodies3d;
 std::vector<float> vertices;
-unsigned int shaderProgram = 0;
+gui::Shader shaderProgram;
 unsigned int VBO = 0, VAO = 0;
 double currentTime;
 const double G = 6700.0;
@@ -149,58 +147,7 @@ int main()
                 vertices.push_back(x3 / 1000.0f);
                 vertices.push_back(y3 / 1000.0f);
 
-                if (shaderProgram != 0)
-                {
-                    glDeleteShader(shaderProgram);
-                }
-                unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-                std::string vertexShaderSourceStr = readFile("resources/shaders/vertexShaders/threeBodies2d.ver");
-                const char *vertexShaderSource = vertexShaderSourceStr.c_str();
-                glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-                glCompileShader(vertexShader);
-                int success;
-                char infoLog[512];
-                glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-                if (!success)
-                {
-                    glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-                    std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
-                              << infoLog << std::endl;
-                }
-
-                if (shaderProgram != 0)
-                {
-
-                    glUseProgram(0);
-                    glDeleteShader(shaderProgram);
-                }
-                unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-                std::string fragmentShaderSourceStr = readFile("resources/shaders/fragmentShaders/threeBodies2d.frag");
-                char const *fragmentShaderSource = fragmentShaderSourceStr.c_str();
-                glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-                glCompileShader(fragmentShader);
-                glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-                if (!success)
-                {
-                    glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-                    std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n"
-                              << infoLog << std::endl;
-                    return 1;
-                }
-                shaderProgram = glCreateProgram();
-                glAttachShader(shaderProgram, vertexShader);
-                glAttachShader(shaderProgram, fragmentShader);
-                glLinkProgram(shaderProgram);
-                glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-                if (!success)
-                {
-                    glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-                    std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n"
-                              << infoLog << std::endl;
-                    return 1;
-                }
-                glDeleteShader(vertexShader);
-                glDeleteShader(fragmentShader);
+                shaderProgram = gui::Shader("resources/shaders/vertexShaders/threeBodies2d.ver", "resources/shaders/fragmentShaders/threeBodies2d.frag");
 
                 if (VAO != 0)
                 {
@@ -405,7 +352,7 @@ int main()
         break;
         case sim::States::ThreeBody2DSim:
         {
-            glUseProgram(shaderProgram);
+            shaderProgram.use();
             glBindVertexArray(VAO);
             glDrawArrays(GL_POINTS, 0, 3);
             glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -472,6 +419,9 @@ int main()
         glfwPollEvents();
     }
 
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    shaderProgram.destroy();
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
@@ -492,16 +442,6 @@ void processInput(GLFWwindow *window)
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
     glViewport(0, 0, width, height);
-}
-
-std::string readFile(std::string path)
-{
-    std::ifstream file;
-    file.open(path);
-    std::stringstream ret;
-    ret << file.rdbuf();
-    file.close();
-    return ret.str();
 }
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
