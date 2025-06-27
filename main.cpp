@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <math.h>
+#include <algorithm>
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -85,32 +86,23 @@ int main()
                              ImGuiWindowFlags_NoSavedSettings |
                              ImGuiWindowFlags_AlwaysAutoResize |
                              ImGuiWindowFlags_NoBackground);
+            std::vector<const char *> buttonNames({"ThreeBodies", "Fixed 2 bodies", "Small n bodies", "Big n bodies", "Three bodies 3D"});
+            std::vector<sim::States> buttonStates({sim::States::ThreeBody2DInit, sim::States::TwoFixedBodyInit, sim::States::NBodySmallInit, sim::States::NBodyBigInit, sim::States::ThreeBody3DInit});
             ImVec2 button_size = ImVec2(window_size.x, window_size.y / 6.0f);
             ImVec2 dummy_size = ImVec2(window_size.x, window_size.y / 6.0f / 12.0f);
-            ImGui::Dummy(dummy_size);
-            if (ImGui::Button("Three bodies", button_size))
+            for (int i = 0; i < buttonNames.size(); i++)
             {
-                state = sim::States::ThreeBody2DInit;
-            }
-            ImGui::Dummy(dummy_size);
-            if (ImGui::Button("Fixed 2 bodies", button_size))
-            {
-                state = sim::States::TwoFixedBodyInit;
-            }
-            ImGui::Dummy(dummy_size);
-            if (ImGui::Button("Small n bodies", button_size))
-            {
-                state = sim::States::NBodySmallInit;
-            }
-            ImGui::Dummy(dummy_size);
-            if (ImGui::Button("Big n bodies", button_size))
-            {
-                state = sim::States::NBodyBigInit;
-            }
-            ImGui::Dummy(dummy_size);
-            if (ImGui::Button("Three bodies 3D", button_size))
-            {
-                state = sim::States::ThreeBody3DInit;
+                ImGui::Dummy(dummy_size);
+                if (ImGui::Button(buttonNames[i], button_size))
+                {
+                    state = buttonStates[i];
+                    switch (state)
+                    {
+                    case sim::States::ThreeBody2DInit:
+                        bodies2d = std::vector<sim::Body2d>(3);
+                        std::cout << bodies2d[0].x << ' ' << bodies2d[0].y << ' ' << bodies2d[0].vx << ' ' << bodies2d[0].vy << ' ' << bodies2d[0].mass;
+                    }
+                }
             }
             ImGui::End();
         }
@@ -128,25 +120,16 @@ int main()
                              ImGuiWindowFlags_NoSavedSettings |
                              ImGuiWindowFlags_AlwaysAutoResize |
                              ImGuiWindowFlags_NoBackground);
-            static float mass1 = 50.0f, mass2 = 100.0f, mass3 = 200.0f;
-            static float x1 = 200.0f, x2 = -300.0, x3 = 100.0f, y1 = -500.0f, y2 = 50.0f, y3 = 0.0f;
-            static float vx1 = -30.0f, vx2 = 0.0f, vx3 = 0.0f, vy1 = 50.0f, vy2 = 0.0f, vy3 = 0.0f;
             ImGui::BeginGroup();
             ImVec2 button_size = ImVec2(140, 60);
             if (ImGui::Button("Start", button_size))
             {
-                bodies2d.clear();
-                bodies2d.push_back(sim::Body2d(mass1, x1, y1, vx1, vy1));
-                bodies2d.push_back(sim::Body2d(mass2, x2, y2, vx2, vy2));
-                bodies2d.push_back(sim::Body2d(mass3, x3, y3, vx3, vy3));
                 vertices.clear();
-                vertices.push_back(x1 / 1000.0f);
-                vertices.push_back(y1 / 1000.0f);
-                vertices.push_back(x2 / 1000.0f);
-                vertices.push_back(y2 / 1000.0f);
-                vertices.push_back(x3 / 1000.0f);
-                vertices.push_back(y3 / 1000.0f);
-
+                for (int i = 0; i < 3; i++)
+                {
+                    vertices.push_back(bodies2d[0].x / 1000.0f);
+                    vertices.push_back(bodies2d[0].y / 1000.0f);
+                }
                 shaderProgram = gui::Shader("resources/shaders/vertexShaders/threeBodies2d.ver", "resources/shaders/fragmentShaders/threeBodies2d.frag");
 
                 if (VAO != 0)
@@ -180,169 +163,28 @@ int main()
             ImGui::Dummy(ImVec2(100.0f, 0.0f));
             ImGui::SameLine();
             ImGui::BeginGroup();
-            if (ImGui::InputFloat("mass1", &mass1, 0.1f, 1.0f, "%.2f"))
+            std::vector<const char *> inputFloatNames({"mass1", "x1", "y1", "vx1", "vy1", "mass2", "x2", "y2", "vx2", "vy2", "mass3", "x3", "y3", "vx3", "vy3"});
+            for (int i = 0, j = 0; i < 3; i++)
             {
-                if (mass1 < 0.1)
+                if (ImGui::InputFloat(inputFloatNames[j++], &bodies2d[i].mass, 0.1f, 1.0f, "%.2f"))
                 {
-                    mass1 = 0.1;
+                    bodies2d[i].mass = std::max(0.1f, std::min(bodies2d[i].mass, 1000.0f));
                 }
-                if (mass1 > 1000.0)
+                if (ImGui::InputFloat(inputFloatNames[j++], &bodies2d[i].x, 0.1f, 1.0f, "%.2f"))
                 {
-                    mass1 = 1000.0;
+                    bodies2d[i].x = std::max(-1000.0f, std::min(bodies2d[i].x, 1000.0f));
                 }
-            }
-            if (ImGui::InputFloat("x1", &x1, 0.1f, 1.0f, "%.2f"))
-            {
-                if (x1 < -1000.0)
+                if (ImGui::InputFloat(inputFloatNames[j++], &bodies2d[i].y, 0.1f, 1.0f, "%.2f"))
                 {
-                    x1 = -1000.0;
+                    bodies2d[i].y = std::max(-1000.0f, std::min(bodies2d[i].y, 1000.0f));
                 }
-                if (x1 > 1000.0)
+                if (ImGui::InputFloat(inputFloatNames[j++], &bodies2d[i].vx, 0.1f, 1.0f, "%.2f"))
                 {
-                    x1 = 1000.0;
+                    bodies2d[i].vx = std::max(-1000.0f, std::min(bodies2d[i].vx, 1000.0f));
                 }
-            }
-            if (ImGui::InputFloat("y1", &y1, 0.1f, 1.0f, "%.2f"))
-            {
-                if (y1 < -1000.0)
+                if (ImGui::InputFloat(inputFloatNames[j++], &bodies2d[i].vy, 0.1f, 1.0f, "%.2f"))
                 {
-                    y1 = -1000.0;
-                }
-                if (y1 > 1000.0)
-                {
-                    y1 = 1000.0;
-                }
-            }
-            if (ImGui::InputFloat("vx1", &vx1, 0.1f, 1.0f, "%.2f"))
-            {
-                if (vx1 < -1000.0)
-                {
-                    vx1 = -1000.0;
-                }
-                if (vx1 > 1000.0)
-                {
-                    vx1 = 1000.0;
-                }
-            }
-            if (ImGui::InputFloat("vy1", &vy1, 0.1f, 1.0f, "%.2f"))
-            {
-                if (vy1 < -1000.0)
-                {
-                    vy1 = -1000.0;
-                }
-                if (vy1 > 1000.0)
-                {
-                    vy1 = 1000.0;
-                }
-            }
-            if (ImGui::InputFloat("mass2", &mass2, 0.1f, 1.0f, "%.2f"))
-            {
-                if (mass2 < 0.1)
-                {
-                    mass2 = 0.1;
-                }
-                if (mass2 > 1000.0)
-                {
-                    mass2 = 1000.0;
-                }
-            }
-            if (ImGui::InputFloat("x2", &x2, 0.1f, 1.0f, "%.2f"))
-            {
-                if (x2 < -1000.0)
-                {
-                    x2 = -1000.0;
-                }
-                if (x2 > 1000.0)
-                {
-                    x2 = 1000.0;
-                }
-            }
-            if (ImGui::InputFloat("y2", &y2, 0.1f, 1.0f, "%.2f"))
-            {
-                if (y2 < -1000.0)
-                {
-                    y2 = -1000.0;
-                }
-                if (y2 > 1000.0)
-                {
-                    y2 = 1000.0;
-                }
-            }
-            if (ImGui::InputFloat("vx2", &vx2, 0.1f, 1.0f, "%.2f"))
-            {
-                if (vx2 < -1000.0)
-                {
-                    vx2 = -1000.0;
-                }
-                if (vx2 > 1000.0)
-                {
-                    vx2 = 1000.0;
-                }
-            }
-            if (ImGui::InputFloat("vy2", &vy2, 0.1f, 1.0f, "%.2f"))
-            {
-                if (vy2 < -1000.0)
-                {
-                    vy2 = -1000.0;
-                }
-                if (vy2 > 1000.0)
-                {
-                    vy2 = 1000.0;
-                }
-            }
-            if (ImGui::InputFloat("mass3", &mass3, 0.1f, 1.0f, "%.2f"))
-            {
-                if (mass3 < 0.1)
-                {
-                    mass3 = 0.1;
-                }
-                if (mass3 > 1000.0)
-                {
-                    mass3 = 1000.0;
-                }
-            }
-            if (ImGui::InputFloat("x3", &x3, 0.1f, 1.0f, "%.2f"))
-            {
-                if (x3 < -1000.0)
-                {
-                    x3 = -1000.0;
-                }
-                if (x3 > 1000.0)
-                {
-                    x3 = 1000.0;
-                }
-            }
-            if (ImGui::InputFloat("y3", &y3, 0.1f, 1.0f, "%.2f"))
-            {
-                if (y3 < -1000.0)
-                {
-                    y3 = -1000.0;
-                }
-                if (y3 > 1000.0)
-                {
-                    y3 = 1000.0;
-                }
-            }
-            if (ImGui::InputFloat("vx3", &vx3, 0.1f, 1.0f, "%.2f"))
-            {
-                if (vx3 < -1000.0)
-                {
-                    vx3 = -1000.0;
-                }
-                if (vx3 > 1000.0)
-                {
-                    vx3 = 1000.0;
-                }
-            }
-            if (ImGui::InputFloat("vy3", &vy3, 0.1f, 1.0f, "%.2f"))
-            {
-                if (vy3 < -1000.0)
-                {
-                    vy3 = -1000.0;
-                }
-                if (vy3 > 1000.0)
-                {
-                    vy3 = 1000.0;
+                    bodies2d[i].vy = std::max(-1000.0f, std::min(bodies2d[i].vy, 1000.0f));
                 }
             }
             ImGui::EndGroup();

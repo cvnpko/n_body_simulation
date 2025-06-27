@@ -6,18 +6,19 @@ namespace sim
     class Body2d
     {
     public:
-        Body2d(double mass, double x, double y, double vx, double vy);
-        double mass, x, y, vx, vy;
+        Body2d(float mass, float x, float y, float vx, float vy);
+        Body2d();
+        float mass, x, y, vx, vy;
 
     private:
     };
     class Body3d
     {
     public:
-        Body3d(double mass, double x, double y, double z, double vx, double vy, double vz);
+        Body3d(float mass, float x, float y, float z, float vx, float vy, float vz);
 
     private:
-        double mass, x, y, z, vx, vy, vz;
+        float mass, x, y, z, vx, vy, vz;
     };
 }
 
