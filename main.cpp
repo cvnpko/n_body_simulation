@@ -797,7 +797,8 @@ int main()
                     vertices[i * 3 + 1] = bodies3d[i].y / 1000.0f;
                     vertices[i * 3 + 2] = bodies3d[i].z / 1000.0f;
                 }
-                shaderProgram = gui::Shader("resources/shaders/vertexShaders/threeBodies2d.ver", "resources/shaders/fragmentShaders/threeBodies2d.frag");
+                shaderProgram = gui::Shader("resources/shaders/vertexShaders/threeBodies3d.ver",
+                                            "resources/shaders/fragmentShaders/threeBodies3d.frag");
 
                 if (VAO != 0)
                 {
@@ -868,8 +869,62 @@ int main()
         }
         break;
         case sim::States::ThreeBody3DSim:
+        {
+            shaderProgram.use();
+            glBindVertexArray(VAO);
+            glDrawArrays(GL_POINTS, 0, 3);
 
-            break;
+            double newTime = glfwGetTime();
+            double a[bodies3d.size()][3];
+            for (int i = 0; i < bodies3d.size(); i++)
+            {
+                a[i][0] = a[i][1] = a[i][2] = 0;
+                for (int j = 0; j < bodies3d.size(); j++)
+                {
+                    if (i != j)
+                    {
+                        double dx = bodies3d[j].x - bodies3d[i].x;
+                        double dy = bodies3d[j].y - bodies3d[i].y;
+                        double dz = bodies3d[j].z - bodies3d[i].z;
+                        double distSqr = dx * dx + dy * dy + dz * dz + alpha * alpha;
+                        double invDist = 1.0 / sqrt(distSqr);
+                        double invDist3 = invDist * invDist * invDist;
+
+                        a[i][0] += G * bodies3d[j].mass * dx * invDist3;
+                        a[i][1] += G * bodies3d[j].mass * dy * invDist3;
+                        a[i][2] += G * bodies3d[j].mass * dz * invDist3;
+                    }
+                }
+            }
+            for (int i = 0; i < bodies3d.size(); i++)
+            {
+                bodies3d[i].vx += a[i][0] * (newTime - currentTime) * 10;
+                bodies3d[i].vy += a[i][1] * (newTime - currentTime) * 10;
+                bodies3d[i].vz += a[i][2] * (newTime - currentTime) * 10;
+                bodies3d[i].x += bodies3d[i].vx * (newTime - currentTime);
+                bodies3d[i].y += bodies3d[i].vy * (newTime - currentTime);
+                bodies3d[i].z += bodies3d[i].vz * (newTime - currentTime);
+            }
+
+            for (int i = 0; i < bodies3d.size(); i++)
+            {
+                vertices[i * 3] = bodies3d[i].x / 1000.0f;
+                vertices[i * 3 + 1] = bodies3d[i].y / 1000.0f;
+                vertices[i * 3 + 2] = bodies3d[i].z / 1000.0f;
+            }
+
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            void *ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(float), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+            if (ptr != NULL)
+            {
+                memcpy(ptr, vertices.data(), vertices.size() * sizeof(float));
+                glUnmapBuffer(GL_ARRAY_BUFFER);
+            }
+
+            currentTime = glfwGetTime();
+        }
+
+        break;
         default:
             glfwSetWindowShouldClose(window, true);
         }
