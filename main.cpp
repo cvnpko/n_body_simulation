@@ -5,6 +5,7 @@
 #include <string>
 #include <math.h>
 #include <algorithm>
+#include <random>
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -110,15 +111,20 @@ int main()
                     switch (state)
                     {
                     case sim::States::ThreeBody2DInit:
-                        bodies2d = std::vector<sim::Body2d>(3);
+                        numOfBodies = 3;
+                        bodies2d = std::vector<sim::Body2d>(numOfBodies);
                         break;
                     case sim::States::TwoFixedBodyInit:
-                        bodies2d = std::vector<sim::Body2d>(3);
+                        numOfBodies = 3;
+                        bodies2d = std::vector<sim::Body2d>(numOfBodies);
                         break;
                     case sim::States::NBodySmallInit:
-                        bodies2d = std::vector<sim::Body2d>(1);
                         numOfBodies = 1;
+                        bodies2d = std::vector<sim::Body2d>(numOfBodies);
                         break;
+                    case sim::States::NBodyBigInit:
+                        numOfBodies = 10000;
+                        bodies2d = std::vector<sim::Body2d>(numOfBodies);
                     }
                 }
             }
@@ -682,8 +688,69 @@ int main()
             currentTime = glfwGetTime();
             break;
         case sim::States::NBodyBigInit:
-            break;
+        {
+            srand(time(NULL));
+            for (int i = 0; i < numOfBodies; i++)
+            {
+                bodies2d[i].mass = std::max((float)rand() / RAND_MAX, 0.1f) * 1000.0f;
+                bodies2d[i].x = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 1000.0f;
+                bodies2d[i].y = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 1000.0f;
+                bodies2d[i].vx = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 1000.0f;
+                bodies2d[i].vy = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 1000.0f;
+            }
+            vertices.clear();
+            vertices = std::vector<float>(numOfBodies * 2);
+            for (int i = 0; i < numOfBodies; i++)
+            {
+                vertices[i * 2] = bodies2d[i].x / 1000.0f;
+                vertices[i * 2 + 1] = bodies2d[i].y / 1000.0f;
+            }
+            shaderProgram = gui::Shader("resources/shaders/vertexShaders/bigNBodies.ver", "resources/shaders/fragmentShaders/bigNBodies.frag");
+
+            if (VAO != 0)
+            {
+                glBindVertexArray(0);
+                glDeleteVertexArrays(1, &VAO);
+            }
+            if (VBO != 0)
+            {
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+                glDeleteBuffers(1, &VBO);
+            }
+            glGenVertexArrays(1, &VAO);
+            glGenBuffers(1, &VBO);
+            glBindVertexArray(VAO);
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
+            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void *)0);
+            glEnableVertexAttribArray(0);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindVertexArray(0);
+            currentTime = glfwGetTime();
+            state = sim::States::NBodyBigSim;
+        }
+        break;
         case sim::States::NBodyBigSim:
+            shaderProgram.use();
+            glBindVertexArray(VAO);
+            glDrawArrays(GL_POINTS, 0, numOfBodies);
+
+            update2dBodies(bodies2d);
+            for (int i = 0; i < bodies2d.size(); i++)
+            {
+                vertices[i * 2] = bodies2d[i].x / 1000.0f;
+                vertices[i * 2 + 1] = bodies2d[i].y / 1000.0f;
+            }
+            {
+                glBindBuffer(GL_ARRAY_BUFFER, VBO);
+                void *ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(float), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+                if (ptr != NULL)
+                {
+                    memcpy(ptr, vertices.data(), vertices.size() * sizeof(float));
+                    glUnmapBuffer(GL_ARRAY_BUFFER);
+                }
+            }
+            currentTime = glfwGetTime();
             break;
         case sim::States::ThreeBody3DInit:
             break;
