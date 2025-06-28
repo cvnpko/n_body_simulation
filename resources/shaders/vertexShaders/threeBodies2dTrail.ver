@@ -3,6 +3,7 @@ layout (location = 0) in vec2 aPos;
 layout (location = 1) in int aIndex;
 
 uniform int uMaxIndex;
+uniform float radius;
 out float vPointSize;
 out float vAlpha;
 
@@ -10,6 +11,6 @@ void main()
 {
     vAlpha=float(aIndex)/float(uMaxIndex);
     gl_Position = vec4(aPos, 0.0, 1.0);
-    gl_PointSize = 10.0*vAlpha;
+    gl_PointSize = radius*vAlpha;
     vPointSize = gl_PointSize;
 }

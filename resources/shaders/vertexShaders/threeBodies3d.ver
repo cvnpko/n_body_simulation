@@ -3,11 +3,12 @@ layout (location = 0) in vec3 aPos;
 
 uniform mat4 view;
 uniform mat4 projection;
+uniform float radius;
 
 void main()
 {
     vec4 viewPos = view * vec4(aPos, 1.0);
     gl_Position = projection * viewPos;
     float distance = -viewPos.z;
-    gl_PointSize = 200.0 / distance;
+    gl_PointSize = radius / distance;
 }

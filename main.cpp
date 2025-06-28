@@ -50,6 +50,7 @@ std::vector<trailStruct> trailVertices;
 gui::Shader shaderProgram, shaderProgramTrail;
 unsigned int VBO = 0, VAO = 0, trailVBO = 0, trailVAO = 0;
 double currentTime, deltaTime;
+float radius;
 const double G = 6700.0;
 const double alpha = 5.0;
 bool trail = false;
@@ -178,6 +179,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             bodies.clear();
             dimension = 0;
             trail = false;
+            radius = 0.0f;
+            static int selectedBody = 0;
         }
     }
 }
@@ -237,6 +240,7 @@ void drawMenu()
             state = sim::States::Init;
             option = buttonOption[i];
             dimension = 2;
+            radius = 10.0f;
             switch (option)
             {
             case sim::Option::ThreeBody2D:
@@ -247,9 +251,11 @@ void drawMenu()
                 numOfBodies = 1;
                 break;
             case sim::Option::NBodyBig:
+                radius = 1.0f;
                 numOfBodies = 50000;
                 break;
             case sim::Option::ThreeBody3D:
+                radius = 300.0f;
                 numOfBodies = 3;
                 dimension = 3;
                 break;
@@ -520,10 +526,12 @@ void drawSim(GLFWwindow *window)
     {
         shaderProgramTrail.use();
         shaderProgramTrail.uniform1i("uMaxIndex", trailLength);
+        shaderProgramTrail.uniform1f("radius", radius);
         glBindVertexArray(trailVAO);
         glDrawArrays(GL_POINTS, 0, trailVertices.size());
     }
     shaderProgram.use();
+    shaderProgram.uniform1f("radius", radius);
     glBindVertexArray(VAO);
     glDrawArrays(GL_POINTS, 0, numOfBodies);
 

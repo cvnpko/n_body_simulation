@@ -19,8 +19,9 @@ namespace gui
         Shader();
         void use();
         void destroy();
-        void uniform1i(const char *name, int value);
-        void uniform4mat(const char *name, glm::mat4 &value);
+        void uniform1i(const char *name, const int value);
+        void uniform1f(const char *name, const float value);
+        void uniform4mat(const char *name, const glm::mat4 &value);
 
     private:
         std::string readFile(std::string path);
