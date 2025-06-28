@@ -121,7 +121,6 @@ int main()
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-
     glfwTerminate();
 
     return 0;
@@ -150,12 +149,10 @@ void processInput(GLFWwindow *window)
         camera.updateKeyboard(GLFW_KEY_A, deltaTime);
     }
 }
-
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
     glViewport(0, 0, width, height);
 }
-
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
     if (key == GLFW_KEY_LEFT_CONTROL && action == GLFW_PRESS)
@@ -163,6 +160,11 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         if (state == sim::States::Sim)
         {
             state = sim::States::Init;
+            trail = false;
+            vertices.clear();
+            trailVertices.clear();
+            bodies2d.clear();
+            bodies3d.clear();
         }
         else if (state == sim::States::Init)
         {
@@ -170,7 +172,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         }
     }
 }
-
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 {
     camera.updateFov(yoffset);
@@ -266,7 +267,6 @@ void draw(GLFWwindow *window)
                     bodies2d[i].vy = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 10.0f;
                 }
             }
-            vertices.clear();
             if (option == sim::Option::ThreeBody3D)
             {
                 vertices = std::vector<float>(numOfBodies * 3);
@@ -340,7 +340,6 @@ void draw(GLFWwindow *window)
 
             if (trail)
             {
-                trailVertices.clear();
                 if (option == sim::Option::TwoFixedBody)
                 {
                     trailVertices = std::vector<trailStruct>(trailLength);
@@ -399,11 +398,11 @@ void draw(GLFWwindow *window)
             if (ImGui::InputInt("Number of bodies", &numOfBodies, 1, 3))
             {
                 numOfBodies = std::min(10, std::max(numOfBodies, 1));
-                while (numOfBodies < numOfBodies)
+                while (bodies2d.size() < numOfBodies)
                 {
                     bodies2d.push_back(sim::Body2d());
                 }
-                while (numOfBodies > numOfBodies)
+                while (bodies2d.size() > numOfBodies)
                 {
                     bodies2d.pop_back();
                 }
