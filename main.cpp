@@ -38,6 +38,7 @@ const double G = 6700.0;
 const double alpha = 5.0;
 bool trail = false;
 unsigned int trailLength = 500;
+int numOfBodies = 0;
 
 int main()
 {
@@ -113,6 +114,10 @@ int main()
                         break;
                     case sim::States::TwoFixedBodyInit:
                         bodies2d = std::vector<sim::Body2d>(3);
+                        break;
+                    case sim::States::NBodySmallInit:
+                        bodies2d = std::vector<sim::Body2d>(1);
+                        numOfBodies = 1;
                         break;
                     }
                 }
@@ -497,8 +502,184 @@ int main()
         }
         break;
         case sim::States::NBodySmallInit:
-            break;
+        {
+            ImGuiIO &io = ImGui::GetIO();
+            ImVec2 window_size = ImVec2(io.DisplaySize.x, io.DisplaySize.y);
+            ImVec2 window_pos = ImVec2(0.0f, 0.0f);
+            ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
+            ImGui::SetNextWindowBgAlpha(0.0f);
+            ImGui::Begin("Controls", nullptr,
+                         ImGuiWindowFlags_NoDecoration |
+                             ImGuiWindowFlags_NoMove |
+                             ImGuiWindowFlags_NoSavedSettings |
+                             ImGuiWindowFlags_AlwaysAutoResize |
+                             ImGuiWindowFlags_NoBackground);
+            ImVec2 button_size = ImVec2(140, 60);
+            if (ImGui::Button("Start", button_size))
+            {
+                vertices.clear();
+                vertices = std::vector<float>(numOfBodies * 2);
+                for (int i = 0; i < numOfBodies; i++)
+                {
+                    vertices[i * 2] = bodies2d[i].x / 1000.0f;
+                    vertices[i * 2 + 1] = bodies2d[i].y / 1000.0f;
+                }
+                shaderProgram = gui::Shader("resources/shaders/vertexShaders/threeBodies2d.ver", "resources/shaders/fragmentShaders/threeBodies2d.frag");
+
+                if (VAO != 0)
+                {
+                    glBindVertexArray(0);
+                    glDeleteVertexArrays(1, &VAO);
+                }
+                if (VBO != 0)
+                {
+                    glBindBuffer(GL_ARRAY_BUFFER, 0);
+                    glDeleteBuffers(1, &VBO);
+                }
+                glGenVertexArrays(1, &VAO);
+                glGenBuffers(1, &VBO);
+                glBindVertexArray(VAO);
+                glBindBuffer(GL_ARRAY_BUFFER, VBO);
+                glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
+                glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void *)0);
+                glEnableVertexAttribArray(0);
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+                glBindVertexArray(0);
+                if (trail)
+                {
+                    trailVertices.clear();
+                    trailVertices = std::vector<trailStruct>(trailLength * numOfBodies);
+                    for (int i = 0; i < numOfBodies; i++)
+                    {
+                        for (int j = 0; j < trailLength; j++)
+                        {
+                            trailVertices[i * trailLength + j].x = vertices[i * 2];
+                            trailVertices[i * trailLength + j].y = vertices[i * 2 + 1];
+                            trailVertices[i * trailLength + j].index = j;
+                        }
+                    }
+                    shaderProgramTrail = gui::Shader("resources/shaders/vertexShaders/threeBodies2dTrail.ver", "resources/shaders/fragmentShaders/threeBodies2dTrail.frag");
+
+                    if (trailVAO != 0)
+                    {
+                        glBindVertexArray(0);
+                        glDeleteVertexArrays(1, &trailVAO);
+                    }
+                    if (trailVBO != 0)
+                    {
+                        glBindBuffer(GL_ARRAY_BUFFER, 0);
+                        glDeleteBuffers(1, &trailVBO);
+                    }
+                    glGenVertexArrays(1, &trailVAO);
+                    glGenBuffers(1, &trailVBO);
+                    glBindVertexArray(trailVAO);
+                    glBindBuffer(GL_ARRAY_BUFFER, trailVBO);
+                    glBufferData(GL_ARRAY_BUFFER, trailVertices.size() * sizeof(trailStruct), &trailVertices[0], GL_DYNAMIC_DRAW);
+                    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(trailStruct), (void *)0);
+                    glVertexAttribIPointer(1, 1, GL_INT, sizeof(trailStruct), (void *)(sizeof(float) * 2));
+                    glEnableVertexAttribArray(0);
+                    glEnableVertexAttribArray(1);
+                    glBindBuffer(GL_ARRAY_BUFFER, 0);
+                    glBindVertexArray(0);
+                }
+                currentTime = glfwGetTime();
+                state = sim::States::NBodySmallSim;
+            }
+            if (ImGui::InputInt("Number of bodies", &numOfBodies, 1, 3))
+            {
+                numOfBodies = std::min(10, std::max(numOfBodies, 1));
+                while (bodies2d.size() < numOfBodies)
+                {
+                    bodies2d.push_back(sim::Body2d());
+                }
+                while (bodies2d.size() > numOfBodies)
+                {
+                    bodies2d.pop_back();
+                }
+            }
+            static int selectedBody = 0;
+            if (ImGui::InputInt("Selected body", &selectedBody, 1, 3))
+            {
+                selectedBody = std::min(numOfBodies - 1, std::max(selectedBody, 0));
+            }
+            ImGui::Checkbox("Trail", &trail);
+            if (ImGui::InputFloat("mass", &bodies2d[selectedBody].mass, 0.1f, 1.0f, "%.2f"))
+            {
+                bodies2d[selectedBody].mass = std::max(0.1f, std::min(bodies2d[selectedBody].mass, 1000.0f));
+            }
+            if (ImGui::InputFloat("x", &bodies2d[selectedBody].x, 0.1f, 1.0f, "%.2f"))
+            {
+                bodies2d[selectedBody].x = std::max(-1000.0f, std::min(bodies2d[selectedBody].x, 1000.0f));
+            }
+            if (ImGui::InputFloat("y", &bodies2d[selectedBody].y, 0.1f, 1.0f, "%.2f"))
+            {
+                bodies2d[selectedBody].y = std::max(-1000.0f, std::min(bodies2d[selectedBody].y, 1000.0f));
+            }
+            if (ImGui::InputFloat("vx", &bodies2d[selectedBody].vx, 0.1f, 1.0f, "%.2f"))
+            {
+                bodies2d[selectedBody].vx = std::max(-1000.0f, std::min(bodies2d[selectedBody].vx, 1000.0f));
+            }
+            if (ImGui::InputFloat("vy", &bodies2d[selectedBody].vy, 0.1f, 1.0f, "%.2f"))
+            {
+                bodies2d[selectedBody].vy = std::max(-1000.0f, std::min(bodies2d[selectedBody].vy, 1000.0f));
+            }
+            ImGui::End();
+        }
+
+        break;
         case sim::States::NBodySmallSim:
+            if (trail)
+            {
+                shaderProgramTrail.use();
+                shaderProgramTrail.uniform1i("uMaxIndex", trailLength);
+                glBindVertexArray(trailVAO);
+                glDrawArrays(GL_POINTS, 0, trailVertices.size());
+            }
+            shaderProgram.use();
+            glBindVertexArray(VAO);
+            glDrawArrays(GL_POINTS, 0, numOfBodies);
+
+            update2dBodies(bodies2d);
+
+            if (trail)
+            {
+                for (int i = 0; i < bodies2d.size(); i++)
+                {
+                    for (int j = 0; j < trailLength - 1; j++)
+                    {
+                        trailVertices[i * trailLength + j].x = trailVertices[i * trailLength + j + 1].x;
+                        trailVertices[i * trailLength + j].y = trailVertices[i * trailLength + j + 1].y;
+                    }
+                    trailVertices[(i + 1) * trailLength - 1].x = vertices[i * 2];
+                    trailVertices[(i + 1) * trailLength - 1].y = vertices[i * 2 + 1];
+                }
+            }
+            for (int i = 0; i < bodies2d.size(); i++)
+            {
+                vertices[i * 2] = bodies2d[i].x / 1000.0f;
+                vertices[i * 2 + 1] = bodies2d[i].y / 1000.0f;
+            }
+
+            if (trail)
+            {
+                glBindBuffer(GL_ARRAY_BUFFER, trailVBO);
+                void *ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, trailVertices.size() * sizeof(trailStruct), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+                if (ptr != NULL)
+                {
+                    memcpy(ptr, trailVertices.data(), trailVertices.size() * sizeof(trailStruct));
+                    glUnmapBuffer(GL_ARRAY_BUFFER);
+                }
+            }
+            {
+                glBindBuffer(GL_ARRAY_BUFFER, VBO);
+                void *ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(float), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+                if (ptr != NULL)
+                {
+                    memcpy(ptr, vertices.data(), vertices.size() * sizeof(float));
+                    glUnmapBuffer(GL_ARRAY_BUFFER);
+                }
+            }
+            currentTime = glfwGetTime();
             break;
         case sim::States::NBodyBigInit:
             break;
