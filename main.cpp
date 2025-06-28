@@ -37,7 +37,7 @@ double currentTime;
 const double G = 6700.0;
 const double alpha = 5.0;
 bool trail = false;
-unsigned int trailLength(50);
+unsigned int trailLength = 500;
 
 int main()
 {
@@ -137,8 +137,8 @@ int main()
                 vertices = std::vector<float>(3 * 2);
                 for (int i = 0; i < 3; i++)
                 {
-                    vertices[i * 2] = bodies2d[0].x / 1000.0f;
-                    vertices[i * 2 + 1] = bodies2d[0].y / 1000.0f;
+                    vertices[i * 2] = bodies2d[i].x / 1000.0f;
+                    vertices[i * 2 + 1] = bodies2d[i].y / 1000.0f;
                 }
                 shaderProgram = gui::Shader("resources/shaders/vertexShaders/threeBodies2d.ver", "resources/shaders/fragmentShaders/threeBodies2d.frag");
 
@@ -190,10 +190,11 @@ int main()
                     glGenBuffers(1, &trailVBO);
                     glBindVertexArray(trailVAO);
                     glBindBuffer(GL_ARRAY_BUFFER, trailVBO);
-                    glBufferData(GL_ARRAY_BUFFER, trailVertices.size() * sizeof(trailStruct), &trailVertices[0], GL_STATIC_DRAW);
-                    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float) + sizeof(int), (void *)0);
-                    glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 2 * sizeof(float) + sizeof(int), (void *)(sizeof(float) * 2));
+                    glBufferData(GL_ARRAY_BUFFER, trailVertices.size() * sizeof(trailStruct), &trailVertices[0], GL_DYNAMIC_DRAW);
+                    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(trailStruct), (void *)0);
+                    glVertexAttribIPointer(1, 1, GL_INT, sizeof(trailStruct), (void *)(sizeof(float) * 2));
                     glEnableVertexAttribArray(0);
+                    glEnableVertexAttribArray(1);
                     glBindBuffer(GL_ARRAY_BUFFER, 0);
                     glBindVertexArray(0);
                 }
@@ -239,23 +240,18 @@ int main()
         break;
         case sim::States::ThreeBody2DSim:
         {
-            shaderProgram.use();
-            glBindVertexArray(VAO);
-            glDrawArrays(GL_POINTS, 0, vertices.size());
-
             if (trail)
             {
                 shaderProgramTrail.use();
+                shaderProgramTrail.uniform1i("uMaxIndex", trailLength);
                 glBindVertexArray(trailVAO);
                 glDrawArrays(GL_POINTS, 0, trailVertices.size());
             }
+            shaderProgram.use();
+            glBindVertexArray(VAO);
+            glDrawArrays(GL_POINTS, 0, 3);
 
             update2dBodies(bodies2d);
-            for (int i = 0; i < bodies2d.size(); i++)
-            {
-                vertices[i * 2] = bodies2d[i].x / 1000.0f;
-                vertices[i * 2 + 1] = bodies2d[i].y / 1000.0f;
-            }
             if (trail)
             {
                 for (int i = 0; i < bodies2d.size(); i++)
@@ -269,16 +265,12 @@ int main()
                     trailVertices[(i + 1) * trailLength - 1].y = vertices[i * 2 + 1];
                 }
             }
-
+            for (int i = 0; i < bodies2d.size(); i++)
             {
-                glBindBuffer(GL_ARRAY_BUFFER, VBO);
-                void *ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(float), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
-                if (ptr != NULL)
-                {
-                    memcpy(ptr, vertices.data(), vertices.size() * sizeof(float));
-                    glUnmapBuffer(GL_ARRAY_BUFFER);
-                }
+                vertices[i * 2] = bodies2d[i].x / 1000.0f;
+                vertices[i * 2 + 1] = bodies2d[i].y / 1000.0f;
             }
+
             if (trail)
             {
                 glBindBuffer(GL_ARRAY_BUFFER, trailVBO);
@@ -286,6 +278,15 @@ int main()
                 if (ptr != NULL)
                 {
                     memcpy(ptr, trailVertices.data(), trailVertices.size() * sizeof(trailStruct));
+                    glUnmapBuffer(GL_ARRAY_BUFFER);
+                }
+            }
+            {
+                glBindBuffer(GL_ARRAY_BUFFER, VBO);
+                void *ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(float), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+                if (ptr != NULL)
+                {
+                    memcpy(ptr, vertices.data(), vertices.size() * sizeof(float));
                     glUnmapBuffer(GL_ARRAY_BUFFER);
                 }
             }
@@ -393,8 +394,8 @@ void update2dBodies(std::vector<sim::Body2d> &bodies)
     }
     for (int i = 0; i < bodies.size(); i++)
     {
-        bodies2d[i].vx += a[i][0] * (newTime - currentTime);
-        bodies2d[i].vy += a[i][1] * (newTime - currentTime);
+        bodies2d[i].vx += a[i][0] * (newTime - currentTime) * 10;
+        bodies2d[i].vy += a[i][1] * (newTime - currentTime) * 10;
         bodies2d[i].x += bodies2d[i].vx * (newTime - currentTime);
         bodies2d[i].y += bodies2d[i].vy * (newTime - currentTime);
     }

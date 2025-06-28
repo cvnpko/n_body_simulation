@@ -16,6 +16,7 @@ namespace gui
         Shader();
         void use();
         void destroy();
+        void uniform1i(const char *name, int value);
 
     private:
         std::string readFile(std::string path);

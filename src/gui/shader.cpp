@@ -23,7 +23,7 @@ namespace gui
                       << infoLog << std::endl;
         }
         unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-        std::string fragmentShaderSourceStr = readFile("resources/shaders/fragmentShaders/threeBodies2d.frag");
+        std::string fragmentShaderSourceStr = readFile(fragmentPath);
         char const *fragmentShaderSource = fragmentShaderSourceStr.c_str();
         glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
         glCompileShader(fragmentShader);
@@ -65,5 +65,15 @@ namespace gui
     void Shader::use()
     {
         glUseProgram(shaderProgram);
+    }
+
+    void Shader::uniform1i(const char *name, int value)
+    {
+        int uMaxIndexLoc = glGetUniformLocation(shaderProgram, name);
+        if (uMaxIndexLoc == -1)
+        {
+            std::cerr << "WARNING::UNIFORM1I" << name << '\n';
+        }
+        glUniform1i(uMaxIndexLoc, value);
     }
 }
