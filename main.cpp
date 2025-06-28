@@ -535,6 +535,10 @@ void drawSim(GLFWwindow *window)
         glm::mat4 view = camera.lookAt();
         shaderProgram.uniform4mat("view", view);
     }
+
+    //***************************************************************
+    //***************************FIZIKA******************************
+    //***************************************************************
     if (option == sim::Option::NBodyBig)
     {
         sim::QuadTree *qt = new sim::QuadTree(-1000.0, 1000.0, 1000.0, -1000.0);
@@ -625,6 +629,9 @@ void drawSim(GLFWwindow *window)
                 vertices[i * dimension + j] = bodies[i].coord[j] / 1000.0f;
             }
         }
+        //***************************************************************
+        //***************************FIZIKA******************************
+        //***************************************************************
         if (trail)
         {
             for (int i = 0; i < numOfBodies; i++)
