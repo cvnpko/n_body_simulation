@@ -1,25 +1,17 @@
 #ifndef HPP_BODY
 #define HPP_BODY
 
+#include <vector>
+
 namespace sim
 {
-    class Body2d
+    class Body
     {
     public:
-        Body2d(float mass, float x, float y, float vx, float vy);
-        Body2d();
-        float mass, x, y, vx, vy;
-
-    private:
-    };
-    class Body3d
-    {
-    public:
-        Body3d(float mass, float x, float y, float z, float vx, float vy, float vz);
-        Body3d();
-        float mass, x, y, z, vx, vy, vz;
-
-    private:
+        Body(int dimension);
+        int dimension;
+        float mass;
+        std::vector<float> coord, veloc;
     };
 }
 

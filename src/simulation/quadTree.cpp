@@ -35,27 +35,27 @@ namespace sim
             }
         }
     }
-    void QuadTree::addBody(Body2d body)
+    void QuadTree::addBody(Body body)
     {
         if (mass == 0)
         {
             mass = body.mass;
-            massCentreX = body.x;
-            massCentreY = body.y;
+            massCentreX = body.coord[0];
+            massCentreY = body.coord[1];
         }
         else
         {
-            massCentreX = (body.x * body.mass + mass * massCentreX) / (mass + body.mass);
-            massCentreY = (body.y * body.mass + mass * massCentreY) / (mass + body.mass);
+            massCentreX = (body.coord[0] * body.mass + mass * massCentreX) / (mass + body.mass);
+            massCentreY = (body.coord[1] * body.mass + mass * massCentreY) / (mass + body.mass);
             mass += body.mass;
         }
         if (depth != 1)
         {
             float sHor = (leftBorder + rightBorder) / 2.0f;
             float sVer = (upBorder + downBorder) / 2.0f;
-            if (body.x <= sHor)
+            if (body.coord[0] <= sHor)
             {
-                if (body.y <= sVer)
+                if (body.coord[1] <= sVer)
                 {
                     if (children[0][0] == nullptr)
                     {
@@ -74,7 +74,7 @@ namespace sim
             }
             else
             {
-                if (body.y <= sVer)
+                if (body.coord[1] <= sVer)
                 {
                     if (children[0][1] == nullptr)
                     {
@@ -97,7 +97,7 @@ namespace sim
             bodies.push_back(body);
         }
     }
-    std::vector<float> QuadTree::calForce(Body2d body, float G, float alpha, float theta)
+    std::vector<float> QuadTree::calForce(Body body, float G, float alpha, float theta)
     {
         if (mass == 0)
         {
@@ -108,8 +108,8 @@ namespace sim
             std::vector<float> ret(2, 0);
             for (int i = 0; i < bodies.size(); i++)
             {
-                float dx = bodies[i].x - body.x;
-                float dy = bodies[i].y - body.y;
+                float dx = bodies[i].coord[0] - body.coord[0];
+                float dy = bodies[i].coord[1] - body.coord[1];
                 float distSqr = dx * dx + dy * dy + alpha * alpha;
                 float invDist = 1.0 / sqrt(distSqr);
                 float invDist3 = invDist * invDist * invDist;
@@ -119,7 +119,8 @@ namespace sim
             }
             return ret;
         }
-        if (body.x >= leftBorder && body.x <= rightBorder && body.y >= downBorder && body.y <= upBorder)
+        if (body.coord[0] >= leftBorder && body.coord[0] <= rightBorder &&
+            body.coord[1] >= downBorder && body.coord[1] <= upBorder)
         {
             std::vector<float> ret(2, 0);
             for (int i = 0; i < 2; i++)
@@ -136,12 +137,13 @@ namespace sim
             }
             return ret;
         }
-        float s = sqrtf((body.x - massCentreX) * (body.x - massCentreX) + (body.y - massCentreY) * (body.y - massCentreY));
+        float s = sqrtf((body.coord[0] - massCentreX) * (body.coord[0] - massCentreX) +
+                        (body.coord[1] - massCentreY) * (body.coord[1] - massCentreY));
         if ((upBorder - downBorder) / s <= theta)
         {
             std::vector<float> ret(2, 0);
-            float dx = massCentreX - body.x;
-            float dy = massCentreY - body.y;
+            float dx = massCentreX - body.coord[0];
+            float dy = massCentreY - body.coord[1];
             float distSqr = dx * dx + dy * dy + alpha * alpha;
             float invDist = 1.0 / sqrt(distSqr);
             float invDist3 = invDist * invDist * invDist;
