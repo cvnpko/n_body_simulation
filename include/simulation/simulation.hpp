@@ -2,19 +2,20 @@
 #define STATES_HPP
 namespace sim
 {
+    enum class Option
+    {
+        MENU,
+        ThreeBody2D,
+        NBodyBig,
+        NBodySmall,
+        TwoFixedBody,
+        ThreeBody3D
+    };
     enum class States
     {
         MENU,
-        ThreeBody2DInit,
-        ThreeBody2DSim,
-        NBodyBigInit,
-        NBodyBigSim,
-        NBodySmallInit,
-        NBodySmallSim,
-        TwoFixedBodyInit,
-        TwoFixedBodySim,
-        ThreeBody3DInit,
-        ThreeBody3DSim
+        Init,
+        Sim
     };
 }
 #endif
