@@ -127,6 +127,9 @@ int main()
                     case sim::States::NBodyBigInit:
                         numOfBodies = 10000;
                         bodies2d = std::vector<sim::Body2d>(numOfBodies);
+                    case sim::States::ThreeBody3DInit:
+                        numOfBodies = 3;
+                        bodies3d = std::vector<sim::Body3d>(numOfBodies);
                     }
                 }
             }
@@ -633,7 +636,6 @@ int main()
             }
             ImGui::End();
         }
-
         break;
         case sim::States::NBodySmallSim:
             if (trail)
@@ -771,8 +773,102 @@ int main()
         }
         break;
         case sim::States::ThreeBody3DInit:
-            break;
+        {
+            ImGuiIO &io = ImGui::GetIO();
+            ImVec2 window_size = ImVec2(io.DisplaySize.x, io.DisplaySize.y);
+            ImVec2 window_pos = ImVec2(0.0f, 0.0f);
+            ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
+            ImGui::SetNextWindowBgAlpha(0.0f);
+            ImGui::Begin("Controls", nullptr,
+                         ImGuiWindowFlags_NoDecoration |
+                             ImGuiWindowFlags_NoMove |
+                             ImGuiWindowFlags_NoSavedSettings |
+                             ImGuiWindowFlags_AlwaysAutoResize |
+                             ImGuiWindowFlags_NoBackground);
+            ImGui::BeginGroup();
+            ImVec2 button_size = ImVec2(140, 60);
+            if (ImGui::Button("Start", button_size))
+            {
+                vertices.clear();
+                vertices = std::vector<float>(numOfBodies * 3);
+                for (int i = 0; i < 3; i++)
+                {
+                    vertices[i * 3] = bodies3d[i].x / 1000.0f;
+                    vertices[i * 3 + 1] = bodies3d[i].y / 1000.0f;
+                    vertices[i * 3 + 2] = bodies3d[i].z / 1000.0f;
+                }
+                shaderProgram = gui::Shader("resources/shaders/vertexShaders/threeBodies2d.ver", "resources/shaders/fragmentShaders/threeBodies2d.frag");
+
+                if (VAO != 0)
+                {
+                    glBindVertexArray(0);
+                    glDeleteVertexArrays(1, &VAO);
+                }
+                if (VBO != 0)
+                {
+                    glBindBuffer(GL_ARRAY_BUFFER, 0);
+                    glDeleteBuffers(1, &VBO);
+                }
+                glGenVertexArrays(1, &VAO);
+                glGenBuffers(1, &VBO);
+                glBindVertexArray(VAO);
+                glBindBuffer(GL_ARRAY_BUFFER, VBO);
+                glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
+                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+                glEnableVertexAttribArray(0);
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+                glBindVertexArray(0);
+
+                currentTime = glfwGetTime();
+                state = sim::States::ThreeBody3DSim;
+            }
+            ImGui::EndGroup();
+            ImGui::SameLine();
+            ImGui::BeginGroup();
+            ImGui::Dummy(ImVec2(100.0f, 0.0f));
+            ImGui::SameLine();
+            ImGui::BeginGroup();
+            std::vector<const char *> inputFloatNames({"mass1", "x1", "y1", "z1", "vx1", "vy1", "vz1",
+                                                       "mass2", "x2", "y2", "z2", "vx2", "vy2", "vz2",
+                                                       "mass3", "x3", "y3", "z3", "vx3", "vy3", "vz3"});
+            for (int i = 0, j = 0; i < 3; i++)
+            {
+                if (ImGui::InputFloat(inputFloatNames[j++], &bodies3d[i].mass, 0.1f, 1.0f, "%.2f"))
+                {
+                    bodies3d[i].mass = std::max(0.1f, std::min(bodies3d[i].mass, 1000.0f));
+                }
+                if (ImGui::InputFloat(inputFloatNames[j++], &bodies3d[i].x, 0.1f, 1.0f, "%.2f"))
+                {
+                    bodies3d[i].x = std::max(-1000.0f, std::min(bodies3d[i].x, 1000.0f));
+                }
+                if (ImGui::InputFloat(inputFloatNames[j++], &bodies3d[i].y, 0.1f, 1.0f, "%.2f"))
+                {
+                    bodies3d[i].y = std::max(-1000.0f, std::min(bodies3d[i].y, 1000.0f));
+                }
+                if (ImGui::InputFloat(inputFloatNames[j++], &bodies3d[i].z, 0.1f, 1.0f, "%.2f"))
+                {
+                    bodies3d[i].z = std::max(-1000.0f, std::min(bodies3d[i].z, 1000.0f));
+                }
+                if (ImGui::InputFloat(inputFloatNames[j++], &bodies3d[i].vx, 0.1f, 1.0f, "%.2f"))
+                {
+                    bodies3d[i].vx = std::max(-1000.0f, std::min(bodies3d[i].vx, 1000.0f));
+                }
+                if (ImGui::InputFloat(inputFloatNames[j++], &bodies3d[i].vy, 0.1f, 1.0f, "%.2f"))
+                {
+                    bodies3d[i].vy = std::max(-1000.0f, std::min(bodies3d[i].vy, 1000.0f));
+                }
+                if (ImGui::InputFloat(inputFloatNames[j++], &bodies3d[i].vz, 0.1f, 1.0f, "%.2f"))
+                {
+                    bodies3d[i].vz = std::max(-1000.0f, std::min(bodies3d[i].vz, 1000.0f));
+                }
+            }
+            ImGui::EndGroup();
+            ImGui::EndGroup();
+            ImGui::End();
+        }
+        break;
         case sim::States::ThreeBody3DSim:
+
             break;
         default:
             glfwSetWindowShouldClose(window, true);
