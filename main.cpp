@@ -10,6 +10,7 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
+#include "simulation/quadTree.hpp"
 #include "simulation/body.hpp"
 #include "simulation/simulation.hpp"
 #include "gui/shader.hpp"
@@ -40,6 +41,7 @@ const double alpha = 5.0;
 bool trail = false;
 unsigned int trailLength = 500;
 int numOfBodies = 0;
+float theta = 2.0f;
 
 int main()
 {
@@ -692,11 +694,11 @@ int main()
             srand(time(NULL));
             for (int i = 0; i < numOfBodies; i++)
             {
-                bodies2d[i].mass = std::max((float)rand() / RAND_MAX, 0.1f) * 1000.0f;
-                bodies2d[i].x = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 1000.0f;
-                bodies2d[i].y = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 1000.0f;
-                bodies2d[i].vx = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 1000.0f;
-                bodies2d[i].vy = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 1000.0f;
+                bodies2d[i].mass = std::max((float)rand() / RAND_MAX, 0.1f) * 10.0f;
+                bodies2d[i].x = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 100.0f;
+                bodies2d[i].y = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 100.0f;
+                bodies2d[i].vx = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 10.0f;
+                bodies2d[i].vy = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 10.0f;
             }
             vertices.clear();
             vertices = std::vector<float>(numOfBodies * 2);
@@ -731,11 +733,25 @@ int main()
         }
         break;
         case sim::States::NBodyBigSim:
+        {
             shaderProgram.use();
             glBindVertexArray(VAO);
             glDrawArrays(GL_POINTS, 0, numOfBodies);
 
-            update2dBodies(bodies2d);
+            sim::QuadTree *qt = new sim::QuadTree(-1000.0, 1000.0, 1000.0, -1000.0);
+            for (int i = 0; i < bodies2d.size(); i++)
+            {
+                qt->addBody(bodies2d[i]);
+            }
+            double newTime = glfwGetTime();
+            for (int i = 0; i < bodies2d.size(); i++)
+            {
+                std::vector<float> a = qt->calForce(bodies2d[i], G, alpha, theta);
+                bodies2d[i].vx += a[0] * (newTime - currentTime) * 10;
+                bodies2d[i].vy += a[1] * (newTime - currentTime) * 10;
+                bodies2d[i].x += bodies2d[i].vx * (newTime - currentTime);
+                bodies2d[i].y += bodies2d[i].vy * (newTime - currentTime);
+            }
             for (int i = 0; i < bodies2d.size(); i++)
             {
                 vertices[i * 2] = bodies2d[i].x / 1000.0f;
@@ -750,8 +766,10 @@ int main()
                     glUnmapBuffer(GL_ARRAY_BUFFER);
                 }
             }
+            delete qt;
             currentTime = glfwGetTime();
-            break;
+        }
+        break;
         case sim::States::ThreeBody3DInit:
             break;
         case sim::States::ThreeBody3DSim:

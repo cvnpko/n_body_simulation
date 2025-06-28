@@ -146,8 +146,8 @@ namespace sim
             float invDist = 1.0 / sqrt(distSqr);
             float invDist3 = invDist * invDist * invDist;
 
-            ret[0] += G * mass * dx * invDist3;
-            ret[1] += G * mass * dy * invDist3;
+            ret[0] += G * mass * dx * invDist3 / 1000.0;
+            ret[1] += G * mass * dy * invDist3 / 1000.0;
             return ret;
         }
         else
