@@ -9,6 +9,11 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include <stb/stb_image.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "simulation/quadTree.hpp"
 #include "simulation/body.hpp"
@@ -19,6 +24,8 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void processInput(GLFWwindow *window);
 void update2dBodies(std::vector<sim::Body2d> &bodies);
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+void mouse_callback(GLFWwindow *window, double xposIn, double yposIn);
 
 struct trailStruct
 {
@@ -35,13 +42,25 @@ std::vector<float> vertices;
 std::vector<trailStruct> trailVertices;
 gui::Shader shaderProgram, shaderProgramTrail;
 unsigned int VBO = 0, VAO = 0, trailVBO = 0, trailVAO = 0;
-double currentTime;
+double currentTime, deltaTime;
 const double G = 6700.0;
 const double alpha = 5.0;
 bool trail = false;
 unsigned int trailLength = 500;
 int numOfBodies = 0;
 float theta = 2.0f;
+glm::mat4 view;
+glm::mat4 projection;
+
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+float yaw = -90.0f;
+float pitch = 0.0f;
+float lastX = 800.0f / 2.0;
+float lastY = 600.0 / 2.0;
+float fov = 45.0f;
+bool firstMouse = true;
 
 int main()
 {
@@ -59,6 +78,8 @@ int main()
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
     glfwSetKeyCallback(window, key_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -799,7 +820,6 @@ int main()
                 }
                 shaderProgram = gui::Shader("resources/shaders/vertexShaders/threeBodies3d.ver",
                                             "resources/shaders/fragmentShaders/threeBodies3d.frag");
-
                 if (VAO != 0)
                 {
                     glBindVertexArray(0);
@@ -870,11 +890,19 @@ int main()
         break;
         case sim::States::ThreeBody3DSim:
         {
+            double newTime = glfwGetTime();
+            deltaTime = newTime - currentTime;
+            currentTime = newTime;
+
             shaderProgram.use();
+            projection = glm::mat4(1.0f);
+            projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+            shaderProgram.uniform4mat("projection", projection);
+            glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+            shaderProgram.uniform4mat("view", view);
             glBindVertexArray(VAO);
             glDrawArrays(GL_POINTS, 0, 3);
 
-            double newTime = glfwGetTime();
             double a[bodies3d.size()][3];
             for (int i = 0; i < bodies3d.size(); i++)
             {
@@ -898,12 +926,12 @@ int main()
             }
             for (int i = 0; i < bodies3d.size(); i++)
             {
-                bodies3d[i].vx += a[i][0] * (newTime - currentTime) * 10;
-                bodies3d[i].vy += a[i][1] * (newTime - currentTime) * 10;
-                bodies3d[i].vz += a[i][2] * (newTime - currentTime) * 10;
-                bodies3d[i].x += bodies3d[i].vx * (newTime - currentTime);
-                bodies3d[i].y += bodies3d[i].vy * (newTime - currentTime);
-                bodies3d[i].z += bodies3d[i].vz * (newTime - currentTime);
+                bodies3d[i].vx += a[i][0] * (deltaTime) * 10;
+                bodies3d[i].vy += a[i][1] * (deltaTime) * 10;
+                bodies3d[i].vz += a[i][2] * (deltaTime) * 10;
+                bodies3d[i].x += bodies3d[i].vx * (deltaTime);
+                bodies3d[i].y += bodies3d[i].vy * (deltaTime);
+                bodies3d[i].z += bodies3d[i].vz * (deltaTime);
             }
 
             for (int i = 0; i < bodies3d.size(); i++)
@@ -951,6 +979,23 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
         glfwSetWindowShouldClose(window, true);
+    }
+    float cameraSpeed = 5.0f * deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+    {
+        cameraPos += cameraSpeed * cameraFront;
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+    {
+        cameraPos -= cameraSpeed * cameraFront;
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+    {
+        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+    {
+        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     }
 }
 
@@ -1015,4 +1060,43 @@ void update2dBodies(std::vector<sim::Body2d> &bodies)
         bodies2d[i].x += bodies2d[i].vx * (newTime - currentTime);
         bodies2d[i].y += bodies2d[i].vy * (newTime - currentTime);
     }
+}
+
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
+{
+    fov -= (float)yoffset;
+    fov = std::max(std::min(fov, 45.0f), 1.0f);
+}
+void mouse_callback(GLFWwindow *window, double xposIn, double yposIn)
+{
+    float xpos = static_cast<float>(xposIn);
+    float ypos = static_cast<float>(yposIn);
+
+    if (firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+        return;
+    }
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos;
+    lastX = xpos;
+    lastY = ypos;
+
+    float sensitivity = 0.1f;
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
+
+    yaw += xoffset;
+    pitch += yoffset;
+
+    pitch = glm::clamp(pitch, -89.0f, 89.0f);
+
+    glm::vec3 direction;
+    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    direction.y = sin(glm::radians(pitch));
+    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    cameraFront = glm::normalize(direction);
 }

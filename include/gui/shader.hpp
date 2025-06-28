@@ -6,6 +6,9 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 namespace gui
 {
@@ -17,6 +20,7 @@ namespace gui
         void use();
         void destroy();
         void uniform1i(const char *name, int value);
+        void uniform4mat(const char *name, glm::mat4 &value);
 
     private:
         std::string readFile(std::string path);
