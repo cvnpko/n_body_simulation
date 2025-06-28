@@ -146,11 +146,13 @@ int main()
                         bodies2d = std::vector<sim::Body2d>(numOfBodies);
                         break;
                     case sim::States::NBodyBigInit:
-                        numOfBodies = 10000;
+                        numOfBodies = 1000;
                         bodies2d = std::vector<sim::Body2d>(numOfBodies);
+                        break;
                     case sim::States::ThreeBody3DInit:
                         numOfBodies = 3;
                         bodies3d = std::vector<sim::Body3d>(numOfBodies);
+                        break;
                     }
                 }
             }
@@ -718,8 +720,8 @@ int main()
             for (int i = 0; i < numOfBodies; i++)
             {
                 bodies2d[i].mass = std::max((float)rand() / RAND_MAX, 0.1f) * 10.0f;
-                bodies2d[i].x = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 100.0f;
-                bodies2d[i].y = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 100.0f;
+                bodies2d[i].x = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 1000.0f;
+                bodies2d[i].y = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 1000.0f;
                 bodies2d[i].vx = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 10.0f;
                 bodies2d[i].vy = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 10.0f;
             }
@@ -757,25 +759,26 @@ int main()
         break;
         case sim::States::NBodyBigSim:
         {
+            double newTime = glfwGetTime();
+            deltaTime = newTime - currentTime;
+            currentTime = newTime;
             shaderProgram.use();
             glBindVertexArray(VAO);
             glDrawArrays(GL_POINTS, 0, numOfBodies);
-
             sim::QuadTree *qt = new sim::QuadTree(-1000.0, 1000.0, 1000.0, -1000.0);
-            for (int i = 0; i < bodies2d.size(); i++)
+            for (int i = 0; i < numOfBodies; i++)
             {
                 qt->addBody(bodies2d[i]);
             }
-            double newTime = glfwGetTime();
-            for (int i = 0; i < bodies2d.size(); i++)
+            for (int i = 0; i < numOfBodies; i++)
             {
                 std::vector<float> a = qt->calForce(bodies2d[i], G, alpha, theta);
-                bodies2d[i].vx += a[0] * (newTime - currentTime) * 10;
-                bodies2d[i].vy += a[1] * (newTime - currentTime) * 10;
-                bodies2d[i].x += bodies2d[i].vx * (newTime - currentTime);
-                bodies2d[i].y += bodies2d[i].vy * (newTime - currentTime);
+                bodies2d[i].vx += a[0] * deltaTime * 10;
+                bodies2d[i].vy += a[1] * deltaTime * 10;
+                bodies2d[i].x += bodies2d[i].vx * deltaTime;
+                bodies2d[i].y += bodies2d[i].vy * deltaTime;
             }
-            for (int i = 0; i < bodies2d.size(); i++)
+            for (int i = 0; i < numOfBodies; i++)
             {
                 vertices[i * 2] = bodies2d[i].x / 1000.0f;
                 vertices[i * 2 + 1] = bodies2d[i].y / 1000.0f;
@@ -790,7 +793,6 @@ int main()
                 }
             }
             delete qt;
-            currentTime = glfwGetTime();
         }
         break;
         case sim::States::ThreeBody3DInit:
@@ -926,12 +928,12 @@ int main()
             }
             for (int i = 0; i < bodies3d.size(); i++)
             {
-                bodies3d[i].vx += a[i][0] * (deltaTime) * 10;
-                bodies3d[i].vy += a[i][1] * (deltaTime) * 10;
-                bodies3d[i].vz += a[i][2] * (deltaTime) * 10;
-                bodies3d[i].x += bodies3d[i].vx * (deltaTime);
-                bodies3d[i].y += bodies3d[i].vy * (deltaTime);
-                bodies3d[i].z += bodies3d[i].vz * (deltaTime);
+                bodies3d[i].vx += a[i][0] * deltaTime * 10;
+                bodies3d[i].vy += a[i][1] * deltaTime * 10;
+                bodies3d[i].vz += a[i][2] * deltaTime * 10;
+                bodies3d[i].x += bodies3d[i].vx * deltaTime;
+                bodies3d[i].y += bodies3d[i].vy * deltaTime;
+                bodies3d[i].z += bodies3d[i].vz * deltaTime;
             }
 
             for (int i = 0; i < bodies3d.size(); i++)
