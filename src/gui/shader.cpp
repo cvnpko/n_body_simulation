@@ -66,8 +66,17 @@ namespace gui
     {
         glUseProgram(shaderProgram);
     }
+    void Shader::uniform1f(const char *name, const float value)
+    {
+        int indexLoc = glGetUniformLocation(shaderProgram, name);
+        if (indexLoc == -1)
+        {
+            std::cerr << "WARNING::UNIFORM1I" << name << '\n';
+        }
+        glUniform1f(indexLoc, value);
+    }
 
-    void Shader::uniform1i(const char *name, int value)
+    void Shader::uniform1i(const char *name, const int value)
     {
         int indexLoc = glGetUniformLocation(shaderProgram, name);
         if (indexLoc == -1)
@@ -76,7 +85,7 @@ namespace gui
         }
         glUniform1i(indexLoc, value);
     }
-    void Shader::uniform4mat(const char *name, glm::mat4 &value)
+    void Shader::uniform4mat(const char *name, const glm::mat4 &value)
     {
         int indexLoc = glGetUniformLocation(shaderProgram, name);
         if (indexLoc == -1)

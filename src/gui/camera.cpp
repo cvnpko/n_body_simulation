@@ -5,7 +5,7 @@ namespace gui
     Camera::Camera(const unsigned int SCR_WIDTH, const unsigned int SCR_HEIGHT)
         : cameraPos(glm::vec3(0.0f, 0.0f, 3.0f)), cameraFront(glm::vec3(0.0f, 0.0f, -1.0f)), cameraUp(glm::vec3(0.0f, 1.0f, 0.0f)),
           yaw(-90.0f), pitch(0.0f), lastX(SCR_WIDTH / 2.0f), lastY(SCR_HEIGHT / 2.0f), fov(45.0f),
-          firstMouse(true), dontRotate(false), cameraSpeed(10.0f) {}
+          firstMouse(true), dontRotate(false), cameraSpeed(2.5f) {}
     float Camera::getFov() const
     {
         return fov;
