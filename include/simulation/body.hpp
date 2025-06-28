@@ -16,9 +16,9 @@ namespace sim
     {
     public:
         Body3d(float mass, float x, float y, float z, float vx, float vy, float vz);
+        float mass, x, y, z, vx, vy, vz;
 
     private:
-        float mass, x, y, z, vx, vy, vz;
     };
 }
 
