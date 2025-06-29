@@ -54,6 +54,7 @@ float radius;
 const double G = 6700.0;
 const double alpha = 5.0;
 bool trail = false;
+bool walls = false;
 const unsigned int trailLength = 500;
 int numOfBodies = 0;
 const float theta = 2.0f;
@@ -392,8 +393,14 @@ void drawInit()
     {
         ImGui::Checkbox("Trail", &trail);
     }
+     if (option == sim::Option::ThreeBody2D || option == sim::Option::NBodySmall || option == sim::Option::TwoFixedBody || option == sim::Option::NBodyBig)
+    {
+        ImGui::Checkbox("Walls", &walls);
+    }
     if (option == sim::Option::NBodySmall)
     {
+        ImGui::Text("Bodies:");
+        ImGui::SetCursorPosX(40);
         if (ImGui::InputInt("Number of bodies", &numOfBodies, 1, 3))
         {
             numOfBodies = std::min(10, std::max(numOfBodies, 1));
@@ -407,26 +414,32 @@ void drawInit()
             }
         }
         static int selectedBody = 0;
+        ImGui::SetCursorPosX(40); 
         if (ImGui::InputInt("Selected body", &selectedBody, 1, 3))
         {
             selectedBody = std::min(numOfBodies - 1, std::max(selectedBody, 0));
         }
+        ImGui::SetCursorPosX(40); 
         if (ImGui::InputFloat("mass", &bodies[selectedBody].mass, 0.1f, 1.0f, "%.2f"))
         {
             bodies[selectedBody].mass = std::max(0.1f, std::min(bodies[selectedBody].mass, 1000.0f));
         }
+        ImGui::SetCursorPosX(40);
         if (ImGui::InputFloat("x", &bodies[selectedBody].coord[0], 0.1f, 1.0f, "%.2f"))
         {
             bodies[selectedBody].coord[0] = std::max(-1000.0f, std::min(bodies[selectedBody].coord[0], 1000.0f));
         }
+        ImGui::SetCursorPosX(40); 
         if (ImGui::InputFloat("y", &bodies[selectedBody].coord[1], 0.1f, 1.0f, "%.2f"))
         {
             bodies[selectedBody].coord[1] = std::max(-1000.0f, std::min(bodies[selectedBody].coord[1], 1000.0f));
         }
+        ImGui::SetCursorPosX(40); 
         if (ImGui::InputFloat("vx", &bodies[selectedBody].veloc[0], 0.1f, 1.0f, "%.2f"))
         {
             bodies[selectedBody].veloc[0] = std::max(-1000.0f, std::min(bodies[selectedBody].veloc[0], 1000.0f));
         }
+        ImGui::SetCursorPosX(40); 
         if (ImGui::InputFloat("vy", &bodies[selectedBody].veloc[1], 0.1f, 1.0f, "%.2f"))
         {
             bodies[selectedBody].veloc[1] = std::max(-1000.0f, std::min(bodies[selectedBody].veloc[1], 1000.0f));
@@ -457,12 +470,25 @@ void drawInit()
             }
             for (int i = 0, j = 0; i < numOfBodies; i++)
             {
+                switch(i) {
+                    case 0:
+                        ImGui::Text("First body:");
+                        break;
+                    case 1:
+                        ImGui::Text("Second body:");
+                        break;
+                    case 2:
+                        ImGui::Text("Third body:");
+                        break;
+                }
+
+                ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
                 if (ImGui::InputFloat(inputFloatNames[j++], &bodies[i].mass, 0.1f, 1.0f, "%.2f"))
                 {
                     bodies[i].mass = std::max(0.1f, std::min(bodies[i].mass, 1000.0f));
                 }
                 for (int k = 0; k < dimension; k++)
-                {
+                {   ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
                     if (ImGui::InputFloat(inputFloatNames[j++], &bodies[i].coord[k], 0.1f, 1.0f, "%.2f"))
                     {
                         bodies[i].coord[k] = std::max(-1000.0f, std::min(bodies[i].coord[k], 1000.0f));
@@ -470,6 +496,7 @@ void drawInit()
                 }
                 for (int k = 0; k < dimension; k++)
                 {
+                    ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
                     if (ImGui::InputFloat(inputFloatNames[j++], &bodies[i].veloc[k], 0.1f, 1.0f, "%.2f"))
                     {
                         bodies[i].veloc[k] = std::max(-1000.0f, std::min(bodies[i].veloc[k], 1000.0f));
@@ -479,22 +506,28 @@ void drawInit()
         }
         else if (option == sim::Option::TwoFixedBody)
         {
+            ImGui::Text("First body:");
+            ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
             if (ImGui::InputFloat("mass1", &bodies[0].mass, 0.1f, 1.0f, "%.2f"))
             {
                 bodies[0].mass = std::max(0.1f, std::min(bodies[0].mass, 1000.0f));
             }
+            ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
             if (ImGui::InputFloat("x1", &bodies[0].coord[0], 0.1f, 1.0f, "%.2f"))
             {
                 bodies[0].coord[0] = std::max(-1000.0f, std::min(bodies[0].coord[0], 1000.0f));
             }
+            ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
             if (ImGui::InputFloat("y1", &bodies[0].coord[1], 0.1f, 1.0f, "%.2f"))
             {
                 bodies[0].coord[1] = std::max(-1000.0f, std::min(bodies[0].coord[1], 1000.0f));
             }
+            ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
             if (ImGui::InputFloat("vx1", &bodies[0].veloc[0], 0.1f, 1.0f, "%.2f"))
             {
                 bodies[0].veloc[0] = std::max(-1000.0f, std::min(bodies[0].veloc[0], 1000.0f));
             }
+            ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
             if (ImGui::InputFloat("vy1", &bodies[0].veloc[1], 0.1f, 1.0f, "%.2f"))
             {
                 bodies[0].veloc[1] = std::max(-1000.0f, std::min(bodies[0].veloc[1], 1000.0f));
@@ -502,12 +535,22 @@ void drawInit()
             std::vector<const char *> inputFloatNames({"mass2", "x2", "y2", "mass3", "x3", "y3"});
             for (int i = 1, j = 0; i < 3; i++)
             {
+                switch(i) {
+                    case 1:
+                        ImGui::Text("Second body:");
+                        break;
+                    case 2:
+                        ImGui::Text("Third body:");
+                        break;
+                }
+                ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
                 if (ImGui::InputFloat(inputFloatNames[j++], &bodies[i].mass, 0.1f, 1.0f, "%.2f"))
                 {
                     bodies[i].mass = std::max(0.1f, std::min(bodies[i].mass, 1000.0f));
                 }
                 for (int k = 0; k < dimension; k++)
-                {
+                {   
+                    ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
                     if (ImGui::InputFloat(inputFloatNames[j++], &bodies[i].coord[k], 0.1f, 1.0f, "%.2f"))
                     {
                         bodies[i].coord[k] = std::max(-1000.0f, std::min(bodies[i].coord[k], 1000.0f));
