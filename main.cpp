@@ -51,10 +51,11 @@ gui::Shader shaderProgram, shaderProgramTrail;
 unsigned int VBO = 0, VAO = 0, trailVBO = 0, trailVAO = 0;
 double currentTime, deltaTime;
 float radius;
-const double G = 6700.0;
+const double G = 66740;
 const double alpha = 5.0;
 bool trail = false;
 bool walls = false;
+bool collisions = false;
 const unsigned int trailLength = 500;
 int numOfBodies = 0;
 const float theta = 2.0f;
@@ -393,9 +394,13 @@ void drawInit()
     {
         ImGui::Checkbox("Trail", &trail);
     }
-     if (option == sim::Option::ThreeBody2D || option == sim::Option::NBodySmall || option == sim::Option::TwoFixedBody || option == sim::Option::NBodyBig)
+    if (option == sim::Option::ThreeBody2D || option == sim::Option::NBodySmall || option == sim::Option::TwoFixedBody || option == sim::Option::NBodyBig)
     {
         ImGui::Checkbox("Walls", &walls);
+    }
+    if (option == sim::Option::ThreeBody2D || option == sim::Option::NBodySmall || option == sim::Option::TwoFixedBody || option == sim::Option::ThreeBody3D)
+    {
+        ImGui::Checkbox("Collisions", &collisions);
     }
     if (option == sim::Option::NBodySmall)
     {
@@ -604,6 +609,19 @@ void drawSim(GLFWwindow *window)
             {
                 bodies[i].veloc[j] += a[j] * deltaTime;
                 bodies[i].coord[j] += bodies[i].veloc[j] * deltaTime;
+
+                if(walls)
+                {
+                    if(abs(bodies[i].coord[j]) > ImGui::GetWindowWidth() * 2.5)
+                    {
+                        bodies[i].veloc[j] *= -1;
+                    }
+                    else if(abs(bodies[i].coord[j]) > ImGui::GetWindowHeight() * 2.5)
+                    {
+                        bodies[i].veloc[j] *= -1;
+                    }
+                }
+
             }
         }
         for (int i = 0; i < numOfBodies; i++)
@@ -633,6 +651,18 @@ void drawSim(GLFWwindow *window)
         bodies[0].veloc[1] += a[1] * deltaTime;
         bodies[0].coord[0] += bodies[0].veloc[0] * deltaTime;
         bodies[0].coord[1] += bodies[0].veloc[1] * deltaTime;
+
+        if(walls)
+        {
+            if(abs(bodies[0].coord[0]) > ImGui::GetWindowWidth() * 2.5)
+            {
+                bodies[0].veloc[0] *= -1;
+            }
+            else if(abs(bodies[0].coord[1]) > ImGui::GetWindowHeight() * 2.5)
+            {
+                bodies[0].veloc[1] *= -1;
+            }
+        }
         if (trail)
         {
             for (int j = 0; j < trailLength - 1; j++)
@@ -647,7 +677,7 @@ void drawSim(GLFWwindow *window)
         vertices[1] = bodies[0].coord[1] / 1000.0f;
     }
     else
-    {
+    {   
         std::vector<std::vector<double>> a(numOfBodies, std::vector<double>(dimension, 0));
         for (int i = 0; i < numOfBodies; i++)
         {
@@ -677,6 +707,19 @@ void drawSim(GLFWwindow *window)
             {
                 bodies[i].veloc[j] += a[i][j] * deltaTime;
                 bodies[i].coord[j] += bodies[i].veloc[j] * deltaTime;
+
+                if(walls)
+                {
+                    if(abs(bodies[i].coord[j]) > ImGui::GetWindowWidth() * 2.5)
+                    {
+                        bodies[i].veloc[j] *= -1;
+                    }
+                    else if(abs(bodies[i].coord[j]) > ImGui::GetWindowHeight() * 2.5)
+                    {
+                        bodies[i].veloc[j] *= -1;
+                    }
+                }
+
                 vertices[i * dimension + j] = bodies[i].coord[j] / 1000.0f;
             }
         }
