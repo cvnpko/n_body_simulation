@@ -33,6 +33,10 @@ void drawMenu();
 void drawInit();
 void drawSim(GLFWwindow *window);
 
+float vectorMagnitude(std::vector<float>& coords);
+bool doCirclesOverlap(int dimension, std::vector<float>& coords1, float r1, std::vector<float>& coords2, float r2);
+float dotProduct(int dimension, std::vector<float>& coords1, std::vector<float>& coords2);
+
 struct trailStruct
 {
     float x, y;
@@ -51,13 +55,15 @@ gui::Shader shaderProgram, shaderProgramTrail;
 unsigned int VBO = 0, VAO = 0, trailVBO = 0, trailVAO = 0;
 double currentTime, deltaTime;
 float radius;
-const double G = 6700.0;
+const double G = 66740;
 const double alpha = 5.0;
 bool trail = false;
 bool walls = false;
+bool collisions = false;
 const unsigned int trailLength = 500;
 int numOfBodies = 0;
 const float theta = 2.0f;
+int selectedBody;
 glm::mat4 view;
 glm::mat4 projection;
 gui::Camera camera(SCR_WIDTH, SCR_HEIGHT);
@@ -181,7 +187,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             dimension = 0;
             trail = false;
             radius = 0.0f;
-            static int selectedBody = 0;
         }
     }
 }
@@ -393,9 +398,13 @@ void drawInit()
     {
         ImGui::Checkbox("Trail", &trail);
     }
-     if (option == sim::Option::ThreeBody2D || option == sim::Option::NBodySmall || option == sim::Option::TwoFixedBody || option == sim::Option::NBodyBig)
+    if (option == sim::Option::ThreeBody2D || option == sim::Option::NBodySmall || option == sim::Option::TwoFixedBody || option == sim::Option::NBodyBig)
     {
         ImGui::Checkbox("Walls", &walls);
+    }
+    if (option == sim::Option::ThreeBody2D || option == sim::Option::NBodySmall || option == sim::Option::TwoFixedBody || option == sim::Option::ThreeBody3D)
+    {
+        ImGui::Checkbox("Collisions", &collisions);
     }
     if (option == sim::Option::NBodySmall)
     {
@@ -412,8 +421,8 @@ void drawInit()
             {
                 bodies.pop_back();
             }
+            selectedBody = 0;
         }
-        static int selectedBody = 0;
         ImGui::SetCursorPosX(40); 
         if (ImGui::InputInt("Selected body", &selectedBody, 1, 3))
         {
@@ -604,6 +613,19 @@ void drawSim(GLFWwindow *window)
             {
                 bodies[i].veloc[j] += a[j] * deltaTime;
                 bodies[i].coord[j] += bodies[i].veloc[j] * deltaTime;
+
+                if(walls)
+                {
+                    if(abs(bodies[i].coord[j]) >= ImGui::GetWindowWidth() * 2.5)
+                    {
+                        bodies[i].veloc[j] *= -1;
+                    }
+                    else if(abs(bodies[i].coord[j]) >= ImGui::GetWindowHeight() * 2.5)
+                    {
+                        bodies[i].veloc[j] *= -1;
+                    }
+                }
+
             }
         }
         for (int i = 0; i < numOfBodies; i++)
@@ -633,6 +655,44 @@ void drawSim(GLFWwindow *window)
         bodies[0].veloc[1] += a[1] * deltaTime;
         bodies[0].coord[0] += bodies[0].veloc[0] * deltaTime;
         bodies[0].coord[1] += bodies[0].veloc[1] * deltaTime;
+
+        if(walls)
+        {
+            if(abs(bodies[0].coord[0]) >= ImGui::GetWindowWidth() * 2.5)
+            {
+                bodies[0].veloc[0] *= -1;
+            }
+            else if(abs(bodies[0].coord[1]) >= ImGui::GetWindowHeight() * 2.5)
+            {
+                bodies[0].veloc[1] *= -1;
+            }
+        }
+
+        if(collisions)
+        {
+            for(int k = 1; k < numOfBodies; k++)
+            {
+                if(doCirclesOverlap(2, bodies[0].coord, radius, bodies[k].coord, radius))
+                {
+                    float vix = bodies[0].veloc[0];
+                    float viy = bodies[0].veloc[1];
+                    float mi = bodies[0].mass;
+
+                    float vkx = bodies[k].veloc[0];
+                    float vky = bodies[k].veloc[1];
+                    float mk = bodies[k].mass;
+
+                    bodies[0].veloc[0] = ((mi - mk) * vix + 2 * mk * vkx) / (mi + mk);
+                    bodies[0].veloc[1] = ((mi - mk) * viy + 2 * mk * vky) / (mi + mk);
+
+                    bodies[k].veloc[0] = ((mi - mk) * vkx + 2 * mi * vix) / (mi + mk);
+                    bodies[k].veloc[1] = ((mi - mk) * vky + 2 * mi * viy) / (mi + mk);
+                        
+                    break;
+                }
+            }
+        }
+
         if (trail)
         {
             for (int j = 0; j < trailLength - 1; j++)
@@ -647,7 +707,7 @@ void drawSim(GLFWwindow *window)
         vertices[1] = bodies[0].coord[1] / 1000.0f;
     }
     else
-    {
+    {   
         std::vector<std::vector<double>> a(numOfBodies, std::vector<double>(dimension, 0));
         for (int i = 0; i < numOfBodies; i++)
         {
@@ -677,6 +737,102 @@ void drawSim(GLFWwindow *window)
             {
                 bodies[i].veloc[j] += a[i][j] * deltaTime;
                 bodies[i].coord[j] += bodies[i].veloc[j] * deltaTime;
+
+                if(walls)
+                {
+                    if(abs(bodies[i].coord[j]) >= ImGui::GetWindowWidth() * 2.5)
+                    {
+                        bodies[i].veloc[j] *= -1;
+                    }
+                    else if(abs(bodies[i].coord[j]) >= ImGui::GetWindowHeight() * 2.5)
+                    {
+                        bodies[i].veloc[j] *= -1;
+                    }
+                }
+
+                if(collisions)
+                {
+                    for(int k = 0; k < numOfBodies; k++)
+                    {
+                        if(k != i && doCirclesOverlap(2, bodies[i].coord, radius, bodies[k].coord, radius))
+                        {
+                            if(dimension == 2)
+                            {
+                                float mi = bodies[i].mass;
+                                float mk = bodies[k].mass;
+
+                                std::vector<float> n(2);
+                                for(int l = 0; l < 2; l++)
+                                {
+                                    n[l] = bodies[k].coord[l] - bodies[i].coord[l];
+                                }
+
+                                float nMagnitude = vectorMagnitude(n);
+                                std::vector<float> nNormal(2);
+                                for(int l = 0; l < 2; l++)
+                                {
+                                    nNormal[l] = n[l] / nMagnitude; 
+                                }
+                                std::vector<float> nTangent(2);
+                                nTangent[0] = -nNormal[1];
+                                nTangent[1] = nNormal[0];
+
+                                float viNormal = dotProduct(2, bodies[i].veloc, nNormal);
+                                float viTangent = dotProduct(2, bodies[i].veloc, nTangent);
+                                float vkNormal = dotProduct(2, bodies[k].veloc, nNormal);
+                                float vkTangent = dotProduct(2, bodies[k].veloc, nTangent);
+
+                                float viNormalNew = (viNormal * (mi - mk) + 2 * mk * vkNormal) / (mi + mk);
+                                float vkNormalNew = (vkNormal * (mi - mk) + 2 * mi * viNormal) / (mi + mk);
+
+                                bodies[i].veloc[0] = nNormal[0] * viNormalNew + nTangent[0] * viTangent;
+                                bodies[i].veloc[1] = nNormal[1] * viNormalNew + nTangent[1] * viTangent;
+
+                                bodies[k].veloc[0] = nNormal[0] * vkNormalNew + nTangent[0] * vkTangent;
+                                bodies[k].veloc[1] = nNormal[1] * vkNormalNew + nTangent[1] * vkTangent;
+                            }
+                            else
+                            {
+                                float mi = bodies[i].mass;
+                                float mk = bodies[k].mass;
+
+                                std::vector<float> n(3);
+                                for(int l = 0; l < 3; l++)
+                                {
+                                    n[l] = bodies[k].coord[l] - bodies[i].coord[l];
+                                }
+
+                                float nMagnitude = vectorMagnitude(n);
+                                std::vector<float> nNormal(3);
+                                for(int l = 0; l < 3; l++)
+                                {
+                                    nNormal[l] = n[l] / nMagnitude; 
+                                }
+
+                                std::vector<float> vRelative(3);
+                                for(int l = 0; l < 3; l++)
+                                {
+                                    vRelative[l] = bodies[i].veloc[l] - bodies[k].veloc[l];
+                                }
+
+                                float vNormal = dotProduct(3, vRelative, nNormal);
+                                float impulse = 2 * vNormal / (mi + mk);
+
+                                bodies[i].veloc[0] -= nNormal[0] * impulse * mk;
+                                bodies[i].veloc[1] -= nNormal[1] * impulse * mk;
+                                bodies[i].veloc[2] -= nNormal[2] * impulse * mk;
+
+                                bodies[k].veloc[0] += nNormal[0] * impulse * mi;
+                                bodies[k].veloc[1] += nNormal[1] * impulse * mi;
+                                bodies[k].veloc[2] += nNormal[2] * impulse * mi;
+                            }
+
+
+                            break;
+                        }
+                    }
+                }
+
                 vertices[i * dimension + j] = bodies[i].coord[j] / 1000.0f;
             }
         }
@@ -714,4 +870,36 @@ void drawSim(GLFWwindow *window)
         memcpy(ptr, vertices.data(), vertices.size() * sizeof(float));
         glUnmapBuffer(GL_ARRAY_BUFFER);
     }
+}
+
+float vectorMagnitude(std::vector<float>& coords)
+{
+        float result = 0.0;
+        for(int i = 0; i < coords.size(); i++)
+        {
+            result += coords[i] * coords[i];
+        }
+        return result;
+}
+
+bool doCirclesOverlap(int dimension, std::vector<float>& coords1, float r1, std::vector<float>& coords2, float r2)
+{
+        if(dimension == 2)
+        {
+            return (coords1[0] - coords2[0]) * (coords1[0] - coords2[0]) + (coords1[1] - coords2[1]) * (coords1[1] - coords2[1]) <= (r1 + r2) * (r1 + r2); 
+        }
+        else
+        {
+            return (coords1[0] - coords2[0]) * (coords1[0] - coords2[0]) + (coords1[1] - coords2[1]) * (coords1[1] - coords2[1]) + (coords1[2] - coords2[2]) * (coords1[2] - coords2[2]) <= (r1 + r2) * (r1 + r2);
+        }
+}
+
+float dotProduct(int dimension, std::vector<float>& coords1, std::vector<float>& coords2)
+{
+    float result = 0;
+    for(int i = 0; i < dimension; i++)
+    {
+        result += coords1[i] * coords2[i];
+    }
+    return result;
 }
