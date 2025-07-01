@@ -55,7 +55,7 @@ gui::Shader shaderProgram, shaderProgramTrail;
 unsigned int VBO = 0, VAO = 0, trailVBO = 0, trailVAO = 0;
 double currentTime, deltaTime;
 float radius;
-const double G = 66740;
+const double G = 6674;
 const double alpha = 5.0;
 bool trail = false;
 bool walls = false;
@@ -187,6 +187,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             bodies.clear();
             dimension = 0;
             trail = false;
+            walls = false;
+            collisions = false;
             radius = 0.0f;
         }
     }
@@ -460,7 +462,7 @@ void drawInit()
             ImGui::SetCursorPosX(40); 
             if (ImGui::InputFloat("COR", &restitutionCoeff, 0.1f, 1.0f, "%.2f"))
             {
-                restitutionCoeff = std::max(0.1f, std::min(restitutionCoeff, 1.0f));
+                restitutionCoeff = std::max(0.0f, std::min(restitutionCoeff, 1.0f));
             }
         }
     }
@@ -528,7 +530,7 @@ void drawInit()
                 ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100); 
                 if (ImGui::InputFloat("COR", &restitutionCoeff, 0.1f, 1.0f, "%.2f"))
                 {
-                    restitutionCoeff = std::max(0.1f, std::min(restitutionCoeff, 1.0f));
+                    restitutionCoeff = std::max(0.0f, std::min(restitutionCoeff, 1.0f));
                 }
             }
         }
@@ -591,7 +593,7 @@ void drawInit()
                 ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100); 
                 if (ImGui::InputFloat("COR", &restitutionCoeff, 0.1f, 1.0f, "%.2f"))
                 {
-                    restitutionCoeff = std::max(0.1f, std::min(restitutionCoeff, 1.0f));
+                    restitutionCoeff = std::max(0.0f, std::min(restitutionCoeff, 1.0f));
                 }
             }
         }
@@ -739,6 +741,11 @@ void drawSim(GLFWwindow *window)
                         bodies[0].veloc[0] = nNormal[0] * viNormalNew + nTangent[0] * viTangent;
                         bodies[0].veloc[1] = nNormal[1] * viNormalNew + nTangent[1] * viTangent;
                     }
+                    else if(restitutionCoeff == 0.0)
+                    {
+                        bodies[0].veloc[0] = 0;
+                        bodies[0].veloc[1] = 0;
+                    }
                     else {
                         std::vector<float> vRelative(2);
                         vRelative[0] = bodies[0].veloc[0] - bodies[k].veloc[0];
@@ -801,7 +808,7 @@ void drawSim(GLFWwindow *window)
                 bodies[i].veloc[j] += a[i][j] * deltaTime;
                 bodies[i].coord[j] += bodies[i].veloc[j] * deltaTime;
 
-                if(walls && dimension == 2)
+                if(walls)
                 {
                     if(bodies[i].coord[0] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[0] > 0)
                     {
@@ -883,6 +890,13 @@ void drawSim(GLFWwindow *window)
                                     bodies[k].veloc[0] += nNormal[0] * impulse * mi;
                                     bodies[k].veloc[1] += nNormal[1] * impulse * mi;
                                     bodies[k].veloc[2] += nNormal[2] * impulse * mi;
+                                }
+                            }
+                            else if(restitutionCoeff == 0.0)
+                            {
+                                for(int l = 0; l < dimension; l++)
+                                {
+                                    bodies[i].veloc[l] = bodies[k].veloc[l] = (mi * bodies[i].veloc[l] + mk * bodies[k].veloc[l]) / (mi + mk);
                                 }
                             }
                             else
