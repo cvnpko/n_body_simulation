@@ -60,6 +60,7 @@ const double alpha = 5.0;
 bool trail = false;
 bool walls = false;
 bool collisions = false;
+float restitutionCoeff = 0.0f;
 const unsigned int trailLength = 500;
 int numOfBodies = 0;
 const float theta = 2.0f;
@@ -453,6 +454,15 @@ void drawInit()
         {
             bodies[selectedBody].veloc[1] = std::max(-1000.0f, std::min(bodies[selectedBody].veloc[1], 1000.0f));
         }
+        if(collisions)
+        {
+            ImGui::Text("Other:");
+            ImGui::SetCursorPosX(40); 
+            if (ImGui::InputFloat("COR", &restitutionCoeff, 0.1f, 1.0f, "%.2f"))
+            {
+                restitutionCoeff = std::max(0.1f, std::min(restitutionCoeff, 0.99f));
+            }
+        }
     }
     ImGui::EndGroup();
     if (option == sim::Option::ThreeBody2D || option == sim::Option::TwoFixedBody || option == sim::Option::ThreeBody3D)
@@ -512,6 +522,15 @@ void drawInit()
                     }
                 }
             }
+            if(collisions)
+            {
+                ImGui::Text("Other:");
+                ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100); 
+                if (ImGui::InputFloat("COR", &restitutionCoeff, 0.1f, 1.0f, "%.2f"))
+                {
+                    restitutionCoeff = std::max(0.1f, std::min(restitutionCoeff, 0.99f));
+                }
+            }
         }
         else if (option == sim::Option::TwoFixedBody)
         {
@@ -564,6 +583,15 @@ void drawInit()
                     {
                         bodies[i].coord[k] = std::max(-1000.0f, std::min(bodies[i].coord[k], 1000.0f));
                     }
+                }
+            }
+            if(collisions)
+            {
+                ImGui::Text("Other:");
+                ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100); 
+                if (ImGui::InputFloat("COR", &restitutionCoeff, 0.1f, 1.0f, "%.2f"))
+                {
+                    restitutionCoeff = std::max(0.1f, std::min(restitutionCoeff, 0.99f));
                 }
             }
         }
@@ -658,11 +686,19 @@ void drawSim(GLFWwindow *window)
 
         if(walls)
         {
-            if(abs(bodies[0].coord[0]) >= ImGui::GetWindowWidth() * 2.5)
+            if(bodies[0].coord[0] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[0].veloc[0] > 0)
             {
                 bodies[0].veloc[0] *= -1;
             }
-            else if(abs(bodies[0].coord[1]) >= ImGui::GetWindowHeight() * 2.5)
+            else if(bodies[0].coord[0] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[0].veloc[0] < 0)
+            {
+                bodies[0].veloc[0] *= -1;
+            }
+            else if(bodies[0].coord[1] + radius > ImGui::GetWindowHeight() * 2.5 && bodies[0].veloc[1] > 0)
+            {
+                bodies[0].veloc[1] *= -1;
+            }
+            else if(bodies[0].coord[1] - radius < ImGui::GetWindowHeight() * -2.5 && bodies[0].veloc[1] < 0)
             {
                 bodies[0].veloc[1] *= -1;
             }
@@ -740,13 +776,21 @@ void drawSim(GLFWwindow *window)
 
                 if(walls)
                 {
-                    if(abs(bodies[i].coord[j]) >= ImGui::GetWindowWidth() * 2.5)
+                    if(bodies[i].coord[0] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[0] > 0)
                     {
-                        bodies[i].veloc[j] *= -1;
+                        bodies[i].veloc[0] *= -1;
                     }
-                    else if(abs(bodies[i].coord[j]) >= ImGui::GetWindowHeight() * 2.5)
+                    else if(bodies[i].coord[0] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[i].veloc[0] < 0)
                     {
-                        bodies[i].veloc[j] *= -1;
+                        bodies[i].veloc[0] *= -1;
+                    }
+                    else if(bodies[i].coord[1] + radius > ImGui::GetWindowHeight() * 2.5 && bodies[i].veloc[1] > 0)
+                    {
+                        bodies[i].veloc[1] *= -1;
+                    }
+                    else if(bodies[i].coord[1] - radius < ImGui::GetWindowHeight() * -2.5 && bodies[i].veloc[1] < 0)
+                    {
+                        bodies[i].veloc[1] *= -1;
                     }
                 }
 
