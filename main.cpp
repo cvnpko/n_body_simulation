@@ -648,15 +648,26 @@ void drawSim(GLFWwindow *window)
                 bodies[i].veloc[j] += a[j] * deltaTime;
                 bodies[i].coord[j] += bodies[i].veloc[j] * deltaTime;
 
+                /********************************************************************************************************************* */
+                /***********************************************Popraviti zidove****************************************************** */
+                /********************************************************************************************************************* */
                 if (walls)
                 {
-                    if (abs(bodies[i].coord[j]) >= ImGui::GetWindowWidth() * 2.5)
+                    if (bodies[i].coord[0] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[0] > 0)
                     {
-                        bodies[i].veloc[j] *= -1;
+                        bodies[i].veloc[0] *= -1;
                     }
-                    else if (abs(bodies[i].coord[j]) >= ImGui::GetWindowHeight() * 2.5)
+                    else if (bodies[i].coord[0] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[i].veloc[0] < 0)
                     {
-                        bodies[i].veloc[j] *= -1;
+                        bodies[i].veloc[0] *= -1;
+                    }
+                    else if (bodies[i].coord[1] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[1] > 0)
+                    {
+                        bodies[i].veloc[1] *= -1;
+                    }
+                    else if (bodies[i].coord[1] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[i].veloc[1] < 0)
+                    {
+                        bodies[i].veloc[1] *= -1;
                     }
                 }
             }
@@ -689,6 +700,9 @@ void drawSim(GLFWwindow *window)
         bodies[0].coord[0] += bodies[0].veloc[0] * deltaTime;
         bodies[0].coord[1] += bodies[0].veloc[1] * deltaTime;
 
+        /********************************************************************************************************************* */
+        /***********************************************Popraviti zidove****************************************************** */
+        /********************************************************************************************************************* */
         if (walls)
         {
             if (bodies[0].coord[0] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[0].veloc[0] > 0)
@@ -699,11 +713,11 @@ void drawSim(GLFWwindow *window)
             {
                 bodies[0].veloc[0] *= -1;
             }
-            else if (bodies[0].coord[1] + radius > ImGui::GetWindowHeight() * 2.5 && bodies[0].veloc[1] > 0)
+            else if (bodies[0].coord[1] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[0].veloc[1] > 0)
             {
                 bodies[0].veloc[1] *= -1;
             }
-            else if (bodies[0].coord[1] - radius < ImGui::GetWindowHeight() * -2.5 && bodies[0].veloc[1] < 0)
+            else if (bodies[0].coord[1] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[0].veloc[1] < 0)
             {
                 bodies[0].veloc[1] *= -1;
             }
@@ -741,8 +755,8 @@ void drawSim(GLFWwindow *window)
                         float viNormalNew = (viNormal * (mi - mk) + 2 * mk * vkNormal) / (mi + mk);
                         float vkNormalNew = (vkNormal * (mi - mk) + 2 * mi * viNormal) / (mi + mk);
 
-                        bodies[0].veloc[0] = nNormal[0] * viNormalNew + nTangent[0] * viTangent;
-                        bodies[0].veloc[1] = nNormal[1] * viNormalNew + nTangent[1] * viTangent;
+                        bodies[0].veloc[0] += nNormal[0] * viNormalNew + nTangent[0] * viTangent;
+                        bodies[0].veloc[1] += nNormal[1] * viNormalNew + nTangent[1] * viTangent;
                     }
                     else if (restitutionCoeff == 0.0)
                     {
@@ -812,6 +826,9 @@ void drawSim(GLFWwindow *window)
                 bodies[i].veloc[j] += a[i][j] * deltaTime;
                 bodies[i].coord[j] += bodies[i].veloc[j] * deltaTime;
 
+                /********************************************************************************************************************* */
+                /***********************************************Popraviti zidove****************************************************** */
+                /********************************************************************************************************************* */
                 if (walls)
                 {
                     if (bodies[i].coord[0] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[0] > 0)
@@ -822,11 +839,11 @@ void drawSim(GLFWwindow *window)
                     {
                         bodies[i].veloc[0] *= -1;
                     }
-                    else if (bodies[i].coord[1] + radius > ImGui::GetWindowHeight() * 2.5 && bodies[i].veloc[1] > 0)
+                    else if (bodies[i].coord[1] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[1] > 0)
                     {
                         bodies[i].veloc[1] *= -1;
                     }
-                    else if (bodies[i].coord[1] - radius < ImGui::GetWindowHeight() * -2.5 && bodies[i].veloc[1] < 0)
+                    else if (bodies[i].coord[1] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[i].veloc[1] < 0)
                     {
                         bodies[i].veloc[1] *= -1;
                     }
@@ -870,11 +887,11 @@ void drawSim(GLFWwindow *window)
                                     float viNormalNew = (viNormal * (mi - mk) + 2 * mk * vkNormal) / (mi + mk);
                                     float vkNormalNew = (vkNormal * (mi - mk) + 2 * mi * viNormal) / (mi + mk);
 
-                                    bodies[i].veloc[0] = nNormal[0] * viNormalNew + nTangent[0] * viTangent;
-                                    bodies[i].veloc[1] = nNormal[1] * viNormalNew + nTangent[1] * viTangent;
+                                    bodies[i].veloc[0] += nNormal[0] * viNormalNew + nTangent[0] * viTangent;
+                                    bodies[i].veloc[1] += nNormal[1] * viNormalNew + nTangent[1] * viTangent;
 
-                                    bodies[k].veloc[0] = nNormal[0] * vkNormalNew + nTangent[0] * vkTangent;
-                                    bodies[k].veloc[1] = nNormal[1] * vkNormalNew + nTangent[1] * vkTangent;
+                                    bodies[k].veloc[0] += nNormal[0] * vkNormalNew + nTangent[0] * vkTangent;
+                                    bodies[k].veloc[1] += nNormal[1] * vkNormalNew + nTangent[1] * vkTangent;
                                 }
                                 else
                                 {
@@ -979,14 +996,13 @@ float vectorMagnitude(std::vector<float> &coords)
 
 bool doCirclesOverlap(int dimension, std::vector<float> &coords1, float r1, std::vector<float> &coords2, float r2)
 {
-    if (dimension == 2)
-    {
-        return (coords1[0] - coords2[0]) * (coords1[0] - coords2[0]) + (coords1[1] - coords2[1]) * (coords1[1] - coords2[1]) <= (r1 + r2) * (r1 + r2);
+
+    float distance = 0.0f;
+    for(int i = 0; i < dimension; i++) {
+        distance += (coords1[i] - coords2[i]) * (coords1[i] - coords2[i]);
     }
-    else
-    {
-        return (coords1[0] - coords2[0]) * (coords1[0] - coords2[0]) + (coords1[1] - coords2[1]) * (coords1[1] - coords2[1]) + (coords1[2] - coords2[2]) * (coords1[2] - coords2[2]) <= (r1 + r2) * (r1 + r2);
-    }
+
+    return distance <= (r1 + r2) * (r1 + r2);
 }
 
 float dotProduct(int dimension, std::vector<float> &coords1, std::vector<float> &coords2)
