@@ -603,6 +603,9 @@ void drawInit()
         ImGui::EndGroup();
         ImGui::EndGroup();
     }
+
+    ImGui::Text("Units:\nLength: 10^11m\nMass: 10^4kg\nTime: 1s in simulation = 1 month IRL");
+
     ImGui::End();
 }
 void drawSim(GLFWwindow *window)
@@ -929,9 +932,7 @@ void drawSim(GLFWwindow *window)
                 vertices[i * dimension + j] = bodies[i].coord[j] / 1000.0f;
             }
         }
-        //***************************************************************
-        //***************************FIZIKA******************************
-        //***************************************************************
+
         if (trail)
         {
             for (int i = 0; i < numOfBodies; i++)
