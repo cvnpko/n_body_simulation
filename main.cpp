@@ -272,6 +272,7 @@ void drawMenu()
             bodies = std::vector<sim::Body>(numOfBodies, sim::Body(dimension));
         }
     }
+    ImGui::Text("Keybinds:\nPrevious screen: CTRL\nExit: ESC\nCoordinates: T\nMovement(3D only): WASD\nLock camera(3D only): RIGHT CLICK");
     ImGui::End();
 }
 void drawInit()
