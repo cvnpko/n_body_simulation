@@ -250,7 +250,7 @@ void drawMenu()
                      ImGuiWindowFlags_NoSavedSettings |
                      ImGuiWindowFlags_AlwaysAutoResize |
                      ImGuiWindowFlags_NoBackground);
-    std::vector<const char *> buttonNames({"ThreeBodies", "Fixed 2 bodies", "Small n bodies", "Big n bodies", "Three bodies 3D"});
+    std::vector<const char *> buttonNames({"Three bodies", "Fixed 2 bodies", "Small n bodies", "Big n bodies", "Three bodies 3D"});
     std::vector<sim::Option> buttonOption({sim::Option::ThreeBody2D, sim::Option::TwoFixedBody, sim::Option::NBodySmall, sim::Option::NBodyBig, sim::Option::ThreeBody3D});
     ImVec2 button_size = ImVec2(window_size.x, window_size.y / 6.0f);
     ImVec2 dummy_size = ImVec2(window_size.x, window_size.y / 6.0f / 12.0f);
