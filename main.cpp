@@ -27,11 +27,7 @@ void processInput(GLFWwindow *window);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void mouse_callback(GLFWwindow *window, double xposIn, double yposIn);
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods);
-// ThreeBody2D:
-// TwoFixedBody:
-// NBodySmall:
-// NBodyBig:
-// ThreeBody3D:
+
 void draw(GLFWwindow *window);
 void drawMenu();
 void drawInit();
@@ -65,9 +61,15 @@ sim::Option option = sim::Option::MENU;
 std::vector<sim::Body> bodies;
 int dimension = 0;
 std::vector<float> vertices;
+std::vector<float> lineVertices({-100000.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+                                 0.0f, 0.0f, 0.0f, 1.0f, 100000.0f, 0.0f, 0.0f, 1.0f,
+                                 0.0f, -100000.0f, 0.0f, 2.0f, 0.0f, 0.0f, 0.0f, 2.0f,
+                                 0.0f, 0.0f, 0.0f, 2.0f, 0.0f, 100000.0f, 0.0f, 2.0f,
+                                 0.0f, 0.0f, -100000.0f, 3.0f, 0.0f, 0.0f, 0.0f, 3.0f,
+                                 0.0f, 0.0f, 0.0f, 3.0f, 0.0f, 0.0f, 100000.0f, 3.0f});
 std::vector<trailStruct> trailVertices;
-gui::Shader shaderProgram, shaderProgramTrail;
-unsigned int VBO = 0, VAO = 0, trailVBO = 0, trailVAO = 0;
+gui::Shader shaderProgram, shaderProgramTrail, shaderProgramLine;
+unsigned int VBO = 0, VAO = 0, trailVBO = 0, trailVAO = 0, lineVBO = 0, lineVAO = 0;
 double currentTime, deltaTime;
 float radius;
 const double G = 6674;
@@ -299,7 +301,7 @@ void drawMenu()
                 dimension = 2;
                 break;
             case sim::Option::ThreeBody3D:
-                radius = 300.0f;
+                radius = 30.0f;
                 numOfBodies = 3;
                 dimension = 3;
                 break;
@@ -883,8 +885,20 @@ void drawInitThreeBody3D()
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
         glVertexAttribPointer(0, dimension, GL_FLOAT, GL_FALSE, dimension * sizeof(float), (void *)0);
-
         glEnableVertexAttribArray(0);
+
+        shaderProgramLine = gui::Shader("resources/shaders/vertexShaders/line.ver",
+                                        "resources/shaders/fragmentShaders/line.frag");
+        glGenVertexArrays(1, &lineVAO);
+        glGenBuffers(1, &lineVBO);
+        glBindVertexArray(lineVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
+        glBufferData(GL_ARRAY_BUFFER, lineVertices.size() * sizeof(float), lineVertices.data(), GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(3 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
 
@@ -1557,16 +1571,20 @@ void drawSimNBodyBig(GLFWwindow *window)
 
 void drawSimThreeBody3D(GLFWwindow *window)
 {
+    projection = glm::perspective(glm::radians(camera.getFov()), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    glm::mat4 view = camera.lookAt();
+    shaderProgramLine.use();
+    shaderProgramLine.uniform4mat("projection", projection);
+    shaderProgramLine.uniform4mat("view", view);
+    glBindVertexArray(lineVAO);
+    glDrawArrays(GL_LINES, 0, 12);
+
     shaderProgram.use();
     shaderProgram.uniform1f("radius", radius);
+    shaderProgram.uniform4mat("projection", projection);
+    shaderProgram.uniform4mat("view", view);
     glBindVertexArray(VAO);
     glDrawArrays(GL_POINTS, 0, numOfBodies);
-
-    projection = glm::mat4(1.0f);
-    projection = glm::perspective(glm::radians(camera.getFov()), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-    shaderProgram.uniform4mat("projection", projection);
-    glm::mat4 view = camera.lookAt();
-    shaderProgram.uniform4mat("view", view);
 
     std::vector<std::vector<double>> a(numOfBodies, std::vector<double>(dimension, 0));
     for (int i = 0; i < numOfBodies; i++)
