@@ -327,6 +327,81 @@ void drawMenu()
                 break;
             }
             bodies = std::vector<sim::Body>(numOfBodies, sim::Body(dimension));
+            switch (option)
+            {
+            case sim::Option::ThreeBody2D:
+                bodies[0].coord[0] = 0.0f;
+                bodies[0].coord[1] = 0.0f;
+                bodies[0].veloc[0] = 0.0f;
+                bodies[0].veloc[1] = 0.0f;
+                bodies[0].mass = 1.0f;
+                bodies[1].coord[0] = 0.0f;
+                bodies[1].coord[1] = 0.0f;
+                bodies[1].veloc[0] = 0.0f;
+                bodies[1].veloc[1] = 0.0f;
+                bodies[1].mass = 1.0f;
+                bodies[2].coord[0] = 0.0f;
+                bodies[2].coord[1] = 0.0f;
+                bodies[2].veloc[0] = 0.0f;
+                bodies[2].veloc[1] = 0.0f;
+                bodies[2].mass = 1.0f;
+                break;
+            case sim::Option::TwoFixedBody:
+                bodies[0].coord[0] = 0.0f;
+                bodies[0].coord[1] = 0.0f;
+                bodies[0].veloc[0] = 0.0f;
+                bodies[0].veloc[1] = 0.0f;
+                bodies[0].mass = 1.0f;
+                bodies[1].coord[0] = 0.0f;
+                bodies[1].coord[1] = 0.0f;
+                bodies[1].mass = 1.0f;
+                bodies[2].coord[0] = 0.0f;
+                bodies[2].coord[1] = 0.0f;
+                bodies[2].mass = 1.0f;
+                break;
+            case sim::Option::NBodySmall:
+                bodies[0].coord[0] = 0.0f;
+                bodies[0].coord[1] = 0.0f;
+                bodies[0].veloc[0] = 0.0f;
+                bodies[0].veloc[1] = 0.0f;
+                bodies[0].mass = 1.0f;
+                break;
+            case sim::Option::NBodyBig:
+                srand(time(NULL));
+                for (int i = 0; i < numOfBodies; i++)
+                {
+                    bodies[i].mass = std::max((float)rand() / RAND_MAX, 0.1f) * 10.0f;
+                    for (int j = 0; j < dimension; j++)
+                    {
+                        bodies[i].coord[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 1000.0f;
+                        bodies[i].veloc[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 10.0f;
+                    }
+                }
+                break;
+            case sim::Option::ThreeBody3D:
+                bodies[0].coord[0] = 0.0f;
+                bodies[0].coord[1] = 0.0f;
+                bodies[0].coord[2] = 0.0f;
+                bodies[0].veloc[0] = 0.0f;
+                bodies[0].veloc[1] = 0.0f;
+                bodies[0].coord[2] = 0.0f;
+                bodies[0].mass = 1.0f;
+                bodies[1].coord[0] = 0.0f;
+                bodies[1].coord[1] = 0.0f;
+                bodies[1].coord[2] = 0.0f;
+                bodies[1].veloc[0] = 0.0f;
+                bodies[1].veloc[1] = 0.0f;
+                bodies[1].coord[2] = 0.0f;
+                bodies[1].mass = 1.0f;
+                bodies[2].coord[0] = 0.0f;
+                bodies[2].coord[1] = 0.0f;
+                bodies[2].coord[2] = 0.0f;
+                bodies[2].veloc[0] = 0.0f;
+                bodies[2].veloc[1] = 0.0f;
+                bodies[2].coord[2] = 0.0f;
+                bodies[2].mass = 1.0f;
+                break;
+            }
         }
     }
     ImGui::EndGroup();
@@ -349,20 +424,20 @@ void drawInit()
 {
     switch (option)
     {
-    case sim::Option::NBodyBig:
-        drawInitNBodyBig();
+    case sim::Option::ThreeBody2D:
+        drawInitThreeBody2D();
+        break;
+    case sim::Option::TwoFixedBody:
+        drawInitTwoFixedBody();
         break;
     case sim::Option::NBodySmall:
         drawInitNBodySmall();
         break;
-    case sim::Option::ThreeBody2D:
-        drawInitThreeBody2D();
+    case sim::Option::NBodyBig:
+        drawInitNBodyBig();
         break;
     case sim::Option::ThreeBody3D:
         drawInitThreeBody3D();
-        break;
-    case sim::Option::TwoFixedBody:
-        drawInitTwoFixedBody();
         break;
     }
 }
@@ -832,16 +907,6 @@ void drawInitNBodyBig()
     ImVec2 button_size = ImVec2(140, 60);
     if (ImGui::Button("Start", button_size))
     {
-        srand(time(NULL));
-        for (int i = 0; i < numOfBodies; i++)
-        {
-            bodies[i].mass = std::max((float)rand() / RAND_MAX, 0.1f) * 10.0f;
-            for (int j = 0; j < dimension; j++)
-            {
-                bodies[i].coord[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 1000.0f;
-                bodies[i].veloc[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 10.0f;
-            }
-        }
         vertices = std::vector<float>(numOfBodies * dimension);
         for (int i = 0; i < numOfBodies; i++)
         {
