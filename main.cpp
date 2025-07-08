@@ -61,12 +61,12 @@ sim::Option option = sim::Option::MENU;
 std::vector<sim::Body> bodies;
 int dimension = 0;
 std::vector<float> vertices;
-std::vector<float> lineVertices({-100000.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-                                 0.0f, 0.0f, 0.0f, 1.0f, 100000.0f, 0.0f, 0.0f, 1.0f,
-                                 0.0f, -100000.0f, 0.0f, 2.0f, 0.0f, 0.0f, 0.0f, 2.0f,
-                                 0.0f, 0.0f, 0.0f, 2.0f, 0.0f, 100000.0f, 0.0f, 2.0f,
-                                 0.0f, 0.0f, -100000.0f, 3.0f, 0.0f, 0.0f, 0.0f, 3.0f,
-                                 0.0f, 0.0f, 0.0f, 3.0f, 0.0f, 0.0f, 100000.0f, 3.0f});
+const std::vector<float> lineVertices({-100000.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+                                       0.0f, 0.0f, 0.0f, 1.0f, 100000.0f, 0.0f, 0.0f, 1.0f,
+                                       0.0f, -100000.0f, 0.0f, 2.0f, 0.0f, 0.0f, 0.0f, 2.0f,
+                                       0.0f, 0.0f, 0.0f, 2.0f, 0.0f, 100000.0f, 0.0f, 2.0f,
+                                       0.0f, 0.0f, -100000.0f, 3.0f, 0.0f, 0.0f, 0.0f, 3.0f,
+                                       0.0f, 0.0f, 0.0f, 3.0f, 0.0f, 0.0f, 100000.0f, 3.0f});
 std::vector<trailStruct> trailVertices;
 gui::Shader shaderProgram, shaderProgramTrail, shaderProgramLine;
 unsigned int VBO = 0, VAO = 0, trailVBO = 0, trailVAO = 0, lineVBO = 0, lineVAO = 0;
@@ -77,6 +77,7 @@ const double alpha = 5.0;
 bool trail = false;
 bool walls = false;
 bool collisions = false;
+bool infos = false;
 float restitutionCoeff = 0.0f;
 const unsigned int trailLength = 500;
 int numOfBodies = 0;
@@ -149,7 +150,13 @@ int main()
 
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
+    glDeleteVertexArrays(1, &lineVAO);
+    glDeleteBuffers(1, &lineVBO);
+    glDeleteVertexArrays(1, &trailVAO);
+    glDeleteBuffers(1, &trailVBO);
     shaderProgram.destroy();
+    shaderProgramTrail.destroy();
+    shaderProgramLine.destroy();
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
@@ -196,6 +203,14 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             glDeleteVertexArrays(1, &VAO);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
             glDeleteBuffers(1, &VBO);
+            glBindVertexArray(0);
+            glDeleteVertexArrays(1, &lineVAO);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glDeleteBuffers(1, &lineVBO);
+            glBindVertexArray(0);
+            glDeleteVertexArrays(1, &trailVAO);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glDeleteBuffers(1, &trailVBO);
         }
         else if (state == sim::States::Init)
         {
@@ -206,9 +221,14 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             dimension = 0;
             trail = false;
             walls = false;
+            infos = false;
             collisions = false;
             radius = 0.0f;
         }
+    }
+    if (state == sim::States::Sim && option != sim::Option::NBodyBig && key == GLFW_KEY_T && action == GLFW_PRESS)
+    {
+        infos = !infos;
     }
 }
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
@@ -317,7 +337,7 @@ void drawMenu()
     ImGui::Dummy(ImVec2(30.0f, 0));
     ImGui::SameLine();
     ImGui::BeginGroup();
-    ImGui::Text("Keybinds: \nPrevious screen: CTRL\nExit: ESC\nCoordinates: T\nMovement(3D only): WASD\nLock cam(3D only): R.CLICK");
+    ImGui::Text("Keybinds: \nPrevious screen: CTRL\nExit: ESC\nInfos: T\nMovement(3D only): WASD\nLock cam(3D only): R.CLICK");
     ImGui::Text("Units:\nLength: 10^11m\nMass: 10^4kg\nTime: 1s sim = 1mo IRL");
     ImGui::EndGroup();
     ImGui::EndGroup();
@@ -970,6 +990,29 @@ void drawInitThreeBody3D()
 
 void drawSimThreeBody2D(GLFWwindow *window)
 {
+    if (infos)
+    {
+        ImGuiIO &io = ImGui::GetIO();
+        ImVec2 window_size = ImVec2(io.DisplaySize.x, io.DisplaySize.y);
+        ImVec2 window_pos = ImVec2(0.0f, 0.0f);
+        ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
+        ImGui::SetNextWindowBgAlpha(0.0f);
+        ImGui::Begin("Infos", nullptr,
+                     ImGuiWindowFlags_NoDecoration |
+                         ImGuiWindowFlags_NoMove |
+                         ImGuiWindowFlags_NoSavedSettings |
+                         ImGuiWindowFlags_AlwaysAutoResize |
+                         ImGuiWindowFlags_NoBackground);
+        for (int i = 0; i < bodies.size(); i++)
+        {
+            ImGui::Text("x%d=%.2f y%d=%.2f\nvx%d=%.2f vy%d=%.2f",
+                        i + 1, bodies[i].coord[0],
+                        i + 1, bodies[i].coord[1],
+                        i + 1, bodies[i].veloc[0],
+                        i + 1, bodies[i].veloc[1]);
+        }
+        ImGui::End();
+    }
     if (trail)
     {
         shaderProgramTrail.use();
@@ -1171,6 +1214,26 @@ void drawSimThreeBody2D(GLFWwindow *window)
 
 void drawSimTwoFixedBody(GLFWwindow *window)
 {
+    if (infos)
+    {
+        ImGuiIO &io = ImGui::GetIO();
+        ImVec2 window_size = ImVec2(io.DisplaySize.x, io.DisplaySize.y);
+        ImVec2 window_pos = ImVec2(0.0f, 0.0f);
+        ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
+        ImGui::SetNextWindowBgAlpha(0.0f);
+        ImGui::Begin("Infos", nullptr,
+                     ImGuiWindowFlags_NoDecoration |
+                         ImGuiWindowFlags_NoMove |
+                         ImGuiWindowFlags_NoSavedSettings |
+                         ImGuiWindowFlags_AlwaysAutoResize |
+                         ImGuiWindowFlags_NoBackground);
+        ImGui::Text("x1=%.2f y1=%.2f\nvx1=%.2f vy1=%.2f",
+                    bodies[0].coord[0],
+                    bodies[0].coord[1],
+                    bodies[0].veloc[0],
+                    bodies[0].veloc[1]);
+        ImGui::End();
+    }
     if (trail)
     {
         shaderProgramTrail.use();
@@ -1313,6 +1376,29 @@ void drawSimTwoFixedBody(GLFWwindow *window)
 
 void drawSimNBodySmall(GLFWwindow *window)
 {
+    if (infos)
+    {
+        ImGuiIO &io = ImGui::GetIO();
+        ImVec2 window_size = ImVec2(io.DisplaySize.x, io.DisplaySize.y);
+        ImVec2 window_pos = ImVec2(0.0f, 0.0f);
+        ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
+        ImGui::SetNextWindowBgAlpha(0.0f);
+        ImGui::Begin("Infos", nullptr,
+                     ImGuiWindowFlags_NoDecoration |
+                         ImGuiWindowFlags_NoMove |
+                         ImGuiWindowFlags_NoSavedSettings |
+                         ImGuiWindowFlags_AlwaysAutoResize |
+                         ImGuiWindowFlags_NoBackground);
+        for (int i = 0; i < bodies.size(); i++)
+        {
+            ImGui::Text("x%d=%.2f y%d=%.2f\nvx%d=%.2f vy%d=%.2f",
+                        i + 1, bodies[i].coord[0],
+                        i + 1, bodies[i].coord[1],
+                        i + 1, bodies[i].veloc[0],
+                        i + 1, bodies[i].veloc[1]);
+        }
+        ImGui::End();
+    }
     if (trail)
     {
         shaderProgramTrail.use();
@@ -1571,6 +1657,36 @@ void drawSimNBodyBig(GLFWwindow *window)
 
 void drawSimThreeBody3D(GLFWwindow *window)
 {
+    if (infos)
+    {
+        ImGuiIO &io = ImGui::GetIO();
+        ImVec2 window_size = ImVec2(io.DisplaySize.x, io.DisplaySize.y);
+        ImVec2 window_pos = ImVec2(0.0f, 0.0f);
+        ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
+        ImGui::SetNextWindowBgAlpha(0.0f);
+        ImGui::Begin("Infos", nullptr,
+                     ImGuiWindowFlags_NoDecoration |
+                         ImGuiWindowFlags_NoMove |
+                         ImGuiWindowFlags_NoSavedSettings |
+                         ImGuiWindowFlags_AlwaysAutoResize |
+                         ImGuiWindowFlags_NoBackground);
+        glm::vec3 cameraPos = camera.getCameraPos();
+        ImGui::Text("xCamera=%.2f yCamera=%.2f zCamera=%.2f",
+                    cameraPos.x,
+                    cameraPos.y,
+                    cameraPos.z);
+        for (int i = 0; i < bodies.size(); i++)
+        {
+            ImGui::Text("x%d=%.2f y%d=%.2f z%d=%.2f\nvx%d=%.2f vy%d=%.2f vz%d=%.2f",
+                        i + 1, bodies[i].coord[0],
+                        i + 1, bodies[i].coord[1],
+                        i + 1, bodies[i].coord[2],
+                        i + 1, bodies[i].veloc[0],
+                        i + 1, bodies[i].veloc[1],
+                        i + 1, bodies[i].veloc[2]);
+        }
+        ImGui::End();
+    }
     projection = glm::perspective(glm::radians(camera.getFov()), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
     glm::mat4 view = camera.lookAt();
     shaderProgramLine.use();

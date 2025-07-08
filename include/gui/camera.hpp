@@ -14,6 +14,7 @@ namespace gui
         Camera(const unsigned int SCR_WIDTH, const unsigned int SCR_HEIGHT);
         float getFov() const;
         glm::mat4 lookAt() const;
+        glm::vec3 getCameraPos() const;
         void updateKeyboard(int button, float deltaTime);
         void updateFov(float offset);
         void updateMouse(float xpos, float ypos);
