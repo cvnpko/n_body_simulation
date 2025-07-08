@@ -43,7 +43,8 @@ struct trailStruct
     int index;
 };
 
-const unsigned int SCR_WIDTH = 800;
+ImFont *smallFont;
+const unsigned int SCR_WIDTH = 1200;
 const unsigned int SCR_HEIGHT = 800;
 sim::States state = sim::States::MENU;
 sim::Option option = sim::Option::MENU;
@@ -123,6 +124,7 @@ int main()
         currentTime = newTime;
 
         draw(window);
+
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(window);
@@ -224,9 +226,20 @@ void draw(GLFWwindow *window)
         drawSim(window);
     }
 }
+
 void drawMenu()
 {
     ImGuiIO &io = ImGui::GetIO();
+    io.Fonts->AddFontDefault();
+    if (!smallFont)
+    {
+        smallFont = io.Fonts->AddFontDefault(
+            [](ImFontConfig *cfg)
+            {
+                cfg->SizePixels = 8.0f;
+                return cfg;
+            }(new ImFontConfig()));
+    }
     ImVec2 window_size = ImVec2(io.DisplaySize.x / 2.0f, io.DisplaySize.y);
     ImVec2 window_pos = ImVec2((io.DisplaySize.x - window_size.x) * 0.5f, 0.0f);
     ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
@@ -241,6 +254,7 @@ void drawMenu()
     std::vector<sim::Option> buttonOption({sim::Option::ThreeBody2D, sim::Option::TwoFixedBody, sim::Option::NBodySmall, sim::Option::NBodyBig, sim::Option::ThreeBody3D});
     ImVec2 button_size = ImVec2(window_size.x, window_size.y / 6.0f);
     ImVec2 dummy_size = ImVec2(window_size.x, window_size.y / 6.0f / 12.0f);
+    ImGui::BeginGroup();
     for (int i = 0; i < buttonNames.size(); i++)
     {
         ImGui::Dummy(dummy_size);
@@ -272,7 +286,19 @@ void drawMenu()
             bodies = std::vector<sim::Body>(numOfBodies, sim::Body(dimension));
         }
     }
-    ImGui::Text("Keybinds:\nPrevious screen: CTRL\nExit: ESC\nCoordinates: T\nMovement(3D only): WASD\nLock camera(3D only): RIGHT CLICK");
+    ImGui::EndGroup();
+    ImGui::SameLine();
+    ImGui::PushFont(smallFont);
+    ImGui::BeginGroup();
+    ImGui::Dummy(ImVec2(0.0f, window_size.y - 200));
+    ImGui::Dummy(ImVec2(30.0f, 0));
+    ImGui::SameLine();
+    ImGui::BeginGroup();
+    ImGui::Text("Keybinds: \nPrevious screen: CTRL\nExit: ESC\nCoordinates: T\nMovement(3D only): WASD\nLock cam(3D only): R.CLICK");
+    ImGui::Text("Units:\nLength: 10^11m\nMass: 10^4kg\nTime: 1s sim = 1mo IRL");
+    ImGui::EndGroup();
+    ImGui::EndGroup();
+    ImGui::PopFont();
     ImGui::End();
 }
 void drawInit()
@@ -604,9 +630,6 @@ void drawInit()
         ImGui::EndGroup();
         ImGui::EndGroup();
     }
-
-    ImGui::Text("Units:\nLength: 10^11m\nMass: 10^4kg\nTime: 1s in simulation = 1 month IRL");
-
     ImGui::End();
 }
 void drawSim(GLFWwindow *window)
@@ -647,10 +670,6 @@ void drawSim(GLFWwindow *window)
             {
                 bodies[i].veloc[j] += a[j] * deltaTime;
                 bodies[i].coord[j] += bodies[i].veloc[j] * deltaTime;
-
-                /********************************************************************************************************************* */
-                /***********************************************Popraviti zidove****************************************************** */
-                /********************************************************************************************************************* */
                 if (walls)
                 {
                     if (bodies[i].coord[0] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[0] > 0)
@@ -998,7 +1017,8 @@ bool doCirclesOverlap(int dimension, std::vector<float> &coords1, float r1, std:
 {
 
     float distance = 0.0f;
-    for(int i = 0; i < dimension; i++) {
+    for (int i = 0; i < dimension; i++)
+    {
         distance += (coords1[i] - coords2[i]) * (coords1[i] - coords2[i]);
     }
 
