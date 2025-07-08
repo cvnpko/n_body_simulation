@@ -1,5 +1,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#define STB_IMAGE_IMPLEMENTATION
 #include <iostream>
 #include <vector>
 #include <string>
@@ -27,6 +28,8 @@ void processInput(GLFWwindow *window);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void mouse_callback(GLFWwindow *window, double xposIn, double yposIn);
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods);
+
+GLFWimage loadIcon(const char *filename);
 
 void draw(GLFWwindow *window);
 void drawMenu();
@@ -108,6 +111,8 @@ int main()
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetKeyCallback(window, key_callback);
+    GLFWimage icon = loadIcon("resources/images/icon.png");
+    glfwSetWindowIcon(window, 1, &icon);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -149,6 +154,7 @@ int main()
     }
 
     glDeleteVertexArrays(1, &VAO);
+    stbi_image_free(icon.pixels);
     glDeleteBuffers(1, &VBO);
     glDeleteVertexArrays(1, &lineVAO);
     glDeleteBuffers(1, &lineVBO);
@@ -1958,4 +1964,16 @@ float dotProduct(int dimension, std::vector<float> &coords1, std::vector<float> 
         result += coords1[i] * coords2[i];
     }
     return result;
+}
+GLFWimage loadIcon(const char *filename)
+{
+    int width, height, channels;
+    unsigned char *data = stbi_load(filename, &width, &height, &channels, 4); // Load image with RGBA channels
+
+    GLFWimage icon;
+    icon.width = width;
+    icon.height = height;
+    icon.pixels = data;
+
+    return icon;
 }
