@@ -27,11 +27,25 @@ void processInput(GLFWwindow *window);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void mouse_callback(GLFWwindow *window, double xposIn, double yposIn);
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods);
-
+// ThreeBody2D:
+// TwoFixedBody:
+// NBodySmall:
+// NBodyBig:
+// ThreeBody3D:
 void draw(GLFWwindow *window);
 void drawMenu();
 void drawInit();
+void drawInitThreeBody2D();
+void drawInitThreeBody3D();
+void drawInitTwoFixedBody();
+void drawInitNBodySmall();
+void drawInitNBodyBig();
 void drawSim(GLFWwindow *window);
+void drawSimThreeBody2D(GLFWwindow *window);
+void drawSimThreeBody3D(GLFWwindow *window);
+void drawSimTwoFixedBody(GLFWwindow *window);
+void drawSimNBodySmall(GLFWwindow *window);
+void drawSimNBodyBig(GLFWwindow *window);
 
 float vectorMagnitude(std::vector<float> &coords);
 bool doCirclesOverlap(int dimension, std::vector<float> &coords1, float r1, std::vector<float> &coords2, float r2);
@@ -262,20 +276,27 @@ void drawMenu()
         {
             state = sim::States::Init;
             option = buttonOption[i];
-            dimension = 2;
-            radius = 10.0f;
             switch (option)
             {
             case sim::Option::ThreeBody2D:
-            case sim::Option::TwoFixedBody:
+                radius = 10.0f;
                 numOfBodies = 3;
+                dimension = 2;
+                break;
+            case sim::Option::TwoFixedBody:
+                radius = 10.0f;
+                numOfBodies = 3;
+                dimension = 2;
                 break;
             case sim::Option::NBodySmall:
+                radius = 10.0f;
                 numOfBodies = 1;
+                dimension = 2;
                 break;
             case sim::Option::NBodyBig:
                 radius = 3.0f;
-                numOfBodies = 5000;
+                numOfBodies = 10000;
+                dimension = 2;
                 break;
             case sim::Option::ThreeBody3D:
                 radius = 300.0f;
@@ -301,7 +322,52 @@ void drawMenu()
     ImGui::PopFont();
     ImGui::End();
 }
+
 void drawInit()
+{
+    switch (option)
+    {
+    case sim::Option::NBodyBig:
+        drawInitNBodyBig();
+        break;
+    case sim::Option::NBodySmall:
+        drawInitNBodySmall();
+        break;
+    case sim::Option::ThreeBody2D:
+        drawInitThreeBody2D();
+        break;
+    case sim::Option::ThreeBody3D:
+        drawInitThreeBody3D();
+        break;
+    case sim::Option::TwoFixedBody:
+        drawInitTwoFixedBody();
+        break;
+    }
+}
+
+void drawSim(GLFWwindow *window)
+{
+    switch (option)
+    {
+    case sim::Option::NBodyBig:
+        drawSimNBodyBig(window);
+        break;
+    case sim::Option::NBodySmall:
+        drawSimNBodySmall(window);
+        break;
+    case sim::Option::ThreeBody2D:
+        drawSimThreeBody2D(window);
+        break;
+    case sim::Option::ThreeBody3D:
+        drawSimThreeBody3D(window);
+        break;
+    case sim::Option::TwoFixedBody:
+        drawSimTwoFixedBody(window);
+        break;
+    }
+}
+
+void drawInitThreeBody2D()
 {
     ImGuiIO &io = ImGui::GetIO();
     ImVec2 window_size = ImVec2(io.DisplaySize.x, io.DisplaySize.y);
@@ -318,19 +384,6 @@ void drawInit()
     ImVec2 button_size = ImVec2(140, 60);
     if (ImGui::Button("Start", button_size))
     {
-        if (option == sim::Option::NBodyBig)
-        {
-            srand(time(NULL));
-            for (int i = 0; i < numOfBodies; i++)
-            {
-                bodies[i].mass = std::max((float)rand() / RAND_MAX, 0.1f) * 10.0f;
-                for (int j = 0; j < dimension; j++)
-                {
-                    bodies[i].coord[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 1000.0f;
-                    bodies[i].veloc[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 10.0f;
-                }
-            }
-        }
         vertices = std::vector<float>(numOfBodies * dimension);
         for (int i = 0; i < numOfBodies; i++)
         {
@@ -339,29 +392,8 @@ void drawInit()
                 vertices[i * dimension + j] = bodies[i].coord[j] / 1000.0f;
             }
         }
-        switch (option)
-        {
-        case sim::Option::ThreeBody2D:
-            shaderProgram = gui::Shader("resources/shaders/vertexShaders/threeBodies2d.ver",
-                                        "resources/shaders/fragmentShaders/threeBodies2d.frag");
-            break;
-        case sim::Option::TwoFixedBody:
-            shaderProgram = gui::Shader("resources/shaders/vertexShaders/threeBodies2d.ver",
-                                        "resources/shaders/fragmentShaders/threeBodies2d.frag");
-            break;
-        case sim::Option::NBodySmall:
-            shaderProgram = gui::Shader("resources/shaders/vertexShaders/threeBodies2d.ver",
-                                        "resources/shaders/fragmentShaders/threeBodies2d.frag");
-            break;
-        case sim::Option::NBodyBig:
-            shaderProgram = gui::Shader("resources/shaders/vertexShaders/bigNBodies.ver",
-                                        "resources/shaders/fragmentShaders/bigNBodies.frag");
-            break;
-        case sim::Option::ThreeBody3D:
-            shaderProgram = gui::Shader("resources/shaders/vertexShaders/threeBodies3d.ver",
-                                        "resources/shaders/fragmentShaders/threeBodies3d.frag");
-            break;
-        }
+        shaderProgram = gui::Shader("resources/shaders/vertexShaders/threeBodies2d.ver",
+                                    "resources/shaders/fragmentShaders/threeBodies2d.frag");
         glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
         glBindVertexArray(VAO);
@@ -375,27 +407,14 @@ void drawInit()
 
         if (trail)
         {
-            if (option == sim::Option::TwoFixedBody)
+            trailVertices = std::vector<trailStruct>(trailLength * numOfBodies);
+            for (int i = 0; i < numOfBodies; i++)
             {
-                trailVertices = std::vector<trailStruct>(trailLength);
                 for (int j = 0; j < trailLength; j++)
                 {
-                    trailVertices[j].x = vertices[0];
-                    trailVertices[j].y = vertices[1];
-                    trailVertices[j].index = j;
-                }
-            }
-            else
-            {
-                trailVertices = std::vector<trailStruct>(trailLength * numOfBodies);
-                for (int i = 0; i < numOfBodies; i++)
-                {
-                    for (int j = 0; j < trailLength; j++)
-                    {
-                        trailVertices[i * trailLength + j].x = vertices[i * 2];
-                        trailVertices[i * trailLength + j].y = vertices[i * 2 + 1];
-                        trailVertices[i * trailLength + j].index = j;
-                    }
+                    trailVertices[i * trailLength + j].x = vertices[i * 2];
+                    trailVertices[i * trailLength + j].y = vertices[i * 2 + 1];
+                    trailVertices[i * trailLength + j].index = j;
                 }
             }
             shaderProgramTrail = gui::Shader("resources/shaders/vertexShaders/threeBodies2dTrail.ver", "resources/shaders/fragmentShaders/threeBodies2dTrail.frag");
@@ -424,215 +443,518 @@ void drawInit()
         }
         state = sim::States::Sim;
     }
-    if (option == sim::Option::ThreeBody2D || option == sim::Option::NBodySmall || option == sim::Option::TwoFixedBody)
+    ImGui::Checkbox("Trail", &trail);
+    ImGui::Checkbox("Walls", &walls);
+    ImGui::Checkbox("Collisions", &collisions);
+    ImGui::EndGroup();
+    ImGui::SameLine();
+    ImGui::BeginGroup();
+    ImGui::Dummy(ImVec2(100.0f, 0.0f));
+    ImGui::SameLine();
+    ImGui::BeginGroup();
+    std::vector<const char *> inputFloatNames({"mass1", "x1", "y1", "vx1", "vy1",
+                                               "mass2", "x2", "y2", "vx2", "vy2",
+                                               "mass3", "x3", "y3", "vx3", "vy3"});
+    for (int i = 0, j = 0; i < numOfBodies; i++)
     {
-        ImGui::Checkbox("Trail", &trail);
-    }
-    if (option == sim::Option::ThreeBody2D || option == sim::Option::NBodySmall || option == sim::Option::TwoFixedBody || option == sim::Option::NBodyBig)
-    {
-        ImGui::Checkbox("Walls", &walls);
-    }
-    if (option == sim::Option::ThreeBody2D || option == sim::Option::NBodySmall || option == sim::Option::TwoFixedBody || option == sim::Option::ThreeBody3D)
-    {
-        ImGui::Checkbox("Collisions", &collisions);
-    }
-    if (option == sim::Option::NBodySmall)
-    {
-        ImGui::Text("Bodies:");
-        ImGui::SetCursorPosX(40);
-        if (ImGui::InputInt("Number of bodies", &numOfBodies, 1, 3))
+        switch (i)
         {
-            numOfBodies = std::min(10, std::max(numOfBodies, 1));
-            while (bodies.size() < numOfBodies)
+        case 0:
+            ImGui::Text("First body:");
+            break;
+        case 1:
+            ImGui::Text("Second body:");
+            break;
+        case 2:
+            ImGui::Text("Third body:");
+            break;
+        }
+
+        ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
+        if (ImGui::InputFloat(inputFloatNames[j++], &bodies[i].mass, 0.1f, 1.0f, "%.2f"))
+        {
+            bodies[i].mass = std::max(0.1f, std::min(bodies[i].mass, 1000.0f));
+        }
+        for (int k = 0; k < dimension; k++)
+        {
+            ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
+            if (ImGui::InputFloat(inputFloatNames[j++], &bodies[i].coord[k], 0.1f, 1.0f, "%.2f"))
             {
-                bodies.push_back(sim::Body(dimension));
+                bodies[i].coord[k] = std::max(-1000.0f, std::min(bodies[i].coord[k], 1000.0f));
             }
-            while (bodies.size() > numOfBodies)
+        }
+        for (int k = 0; k < dimension; k++)
+        {
+            ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
+            if (ImGui::InputFloat(inputFloatNames[j++], &bodies[i].veloc[k], 0.1f, 1.0f, "%.2f"))
             {
-                bodies.pop_back();
+                bodies[i].veloc[k] = std::max(-1000.0f, std::min(bodies[i].veloc[k], 1000.0f));
             }
-            selectedBody = 0;
         }
-        ImGui::SetCursorPosX(40);
-        if (ImGui::InputInt("Selected body", &selectedBody, 1, 3))
+    }
+    if (collisions)
+    {
+        ImGui::Text("Other:");
+        ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
+        if (ImGui::InputFloat("COR", &restitutionCoeff, 0.1f, 1.0f, "%.2f"))
         {
-            selectedBody = std::min(numOfBodies - 1, std::max(selectedBody, 0));
-        }
-        ImGui::SetCursorPosX(40);
-        if (ImGui::InputFloat("mass", &bodies[selectedBody].mass, 0.1f, 1.0f, "%.2f"))
-        {
-            bodies[selectedBody].mass = std::max(0.1f, std::min(bodies[selectedBody].mass, 1000.0f));
-        }
-        ImGui::SetCursorPosX(40);
-        if (ImGui::InputFloat("x", &bodies[selectedBody].coord[0], 0.1f, 1.0f, "%.2f"))
-        {
-            bodies[selectedBody].coord[0] = std::max(-1000.0f, std::min(bodies[selectedBody].coord[0], 1000.0f));
-        }
-        ImGui::SetCursorPosX(40);
-        if (ImGui::InputFloat("y", &bodies[selectedBody].coord[1], 0.1f, 1.0f, "%.2f"))
-        {
-            bodies[selectedBody].coord[1] = std::max(-1000.0f, std::min(bodies[selectedBody].coord[1], 1000.0f));
-        }
-        ImGui::SetCursorPosX(40);
-        if (ImGui::InputFloat("vx", &bodies[selectedBody].veloc[0], 0.1f, 1.0f, "%.2f"))
-        {
-            bodies[selectedBody].veloc[0] = std::max(-1000.0f, std::min(bodies[selectedBody].veloc[0], 1000.0f));
-        }
-        ImGui::SetCursorPosX(40);
-        if (ImGui::InputFloat("vy", &bodies[selectedBody].veloc[1], 0.1f, 1.0f, "%.2f"))
-        {
-            bodies[selectedBody].veloc[1] = std::max(-1000.0f, std::min(bodies[selectedBody].veloc[1], 1000.0f));
-        }
-        if (collisions)
-        {
-            ImGui::Text("Other:");
-            ImGui::SetCursorPosX(40);
-            if (ImGui::InputFloat("COR", &restitutionCoeff, 0.1f, 1.0f, "%.2f"))
-            {
-                restitutionCoeff = std::max(0.0f, std::min(restitutionCoeff, 1.0f));
-            }
+            restitutionCoeff = std::max(0.0f, std::min(restitutionCoeff, 1.0f));
         }
     }
     ImGui::EndGroup();
-    if (option == sim::Option::ThreeBody2D || option == sim::Option::TwoFixedBody || option == sim::Option::ThreeBody3D)
-    {
-        ImGui::SameLine();
-        ImGui::BeginGroup();
-        ImGui::Dummy(ImVec2(100.0f, 0.0f));
-        ImGui::SameLine();
-        ImGui::BeginGroup();
-        if (option == sim::Option::ThreeBody3D || option == sim::Option::ThreeBody2D)
-        {
-            std::vector<const char *> inputFloatNames;
-            if (option == sim::Option::ThreeBody3D)
-            {
-                inputFloatNames = std::vector<const char *>({"mass1", "x1", "y1", "z1", "vx1", "vy1", "vz1",
-                                                             "mass2", "x2", "y2", "z2", "vx2", "vy2", "vz2",
-                                                             "mass3", "x3", "y3", "z3", "vx3", "vy3", "vz3"});
-            }
-            else
-            {
-                inputFloatNames = std::vector<const char *>({"mass1", "x1", "y1", "vx1", "vy1",
-                                                             "mass2", "x2", "y2", "vx2", "vy2",
-                                                             "mass3", "x3", "y3", "vx3", "vy3"});
-            }
-            for (int i = 0, j = 0; i < numOfBodies; i++)
-            {
-                switch (i)
-                {
-                case 0:
-                    ImGui::Text("First body:");
-                    break;
-                case 1:
-                    ImGui::Text("Second body:");
-                    break;
-                case 2:
-                    ImGui::Text("Third body:");
-                    break;
-                }
-
-                ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
-                if (ImGui::InputFloat(inputFloatNames[j++], &bodies[i].mass, 0.1f, 1.0f, "%.2f"))
-                {
-                    bodies[i].mass = std::max(0.1f, std::min(bodies[i].mass, 1000.0f));
-                }
-                for (int k = 0; k < dimension; k++)
-                {
-                    ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
-                    if (ImGui::InputFloat(inputFloatNames[j++], &bodies[i].coord[k], 0.1f, 1.0f, "%.2f"))
-                    {
-                        bodies[i].coord[k] = std::max(-1000.0f, std::min(bodies[i].coord[k], 1000.0f));
-                    }
-                }
-                for (int k = 0; k < dimension; k++)
-                {
-                    ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
-                    if (ImGui::InputFloat(inputFloatNames[j++], &bodies[i].veloc[k], 0.1f, 1.0f, "%.2f"))
-                    {
-                        bodies[i].veloc[k] = std::max(-1000.0f, std::min(bodies[i].veloc[k], 1000.0f));
-                    }
-                }
-            }
-            if (collisions)
-            {
-                ImGui::Text("Other:");
-                ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
-                if (ImGui::InputFloat("COR", &restitutionCoeff, 0.1f, 1.0f, "%.2f"))
-                {
-                    restitutionCoeff = std::max(0.0f, std::min(restitutionCoeff, 1.0f));
-                }
-            }
-        }
-        else if (option == sim::Option::TwoFixedBody)
-        {
-            ImGui::Text("First body:");
-            ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
-            if (ImGui::InputFloat("mass1", &bodies[0].mass, 0.1f, 1.0f, "%.2f"))
-            {
-                bodies[0].mass = std::max(0.1f, std::min(bodies[0].mass, 1000.0f));
-            }
-            ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
-            if (ImGui::InputFloat("x1", &bodies[0].coord[0], 0.1f, 1.0f, "%.2f"))
-            {
-                bodies[0].coord[0] = std::max(-1000.0f, std::min(bodies[0].coord[0], 1000.0f));
-            }
-            ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
-            if (ImGui::InputFloat("y1", &bodies[0].coord[1], 0.1f, 1.0f, "%.2f"))
-            {
-                bodies[0].coord[1] = std::max(-1000.0f, std::min(bodies[0].coord[1], 1000.0f));
-            }
-            ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
-            if (ImGui::InputFloat("vx1", &bodies[0].veloc[0], 0.1f, 1.0f, "%.2f"))
-            {
-                bodies[0].veloc[0] = std::max(-1000.0f, std::min(bodies[0].veloc[0], 1000.0f));
-            }
-            ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
-            if (ImGui::InputFloat("vy1", &bodies[0].veloc[1], 0.1f, 1.0f, "%.2f"))
-            {
-                bodies[0].veloc[1] = std::max(-1000.0f, std::min(bodies[0].veloc[1], 1000.0f));
-            }
-            std::vector<const char *> inputFloatNames({"mass2", "x2", "y2", "mass3", "x3", "y3"});
-            for (int i = 1, j = 0; i < 3; i++)
-            {
-                switch (i)
-                {
-                case 1:
-                    ImGui::Text("Second body:");
-                    break;
-                case 2:
-                    ImGui::Text("Third body:");
-                    break;
-                }
-                ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
-                if (ImGui::InputFloat(inputFloatNames[j++], &bodies[i].mass, 0.1f, 1.0f, "%.2f"))
-                {
-                    bodies[i].mass = std::max(0.1f, std::min(bodies[i].mass, 1000.0f));
-                }
-                for (int k = 0; k < dimension; k++)
-                {
-                    ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
-                    if (ImGui::InputFloat(inputFloatNames[j++], &bodies[i].coord[k], 0.1f, 1.0f, "%.2f"))
-                    {
-                        bodies[i].coord[k] = std::max(-1000.0f, std::min(bodies[i].coord[k], 1000.0f));
-                    }
-                }
-            }
-            if (collisions)
-            {
-                ImGui::Text("Other:");
-                ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
-                if (ImGui::InputFloat("COR", &restitutionCoeff, 0.1f, 1.0f, "%.2f"))
-                {
-                    restitutionCoeff = std::max(0.0f, std::min(restitutionCoeff, 1.0f));
-                }
-            }
-        }
-        ImGui::EndGroup();
-        ImGui::EndGroup();
-    }
+    ImGui::EndGroup();
     ImGui::End();
 }
-void drawSim(GLFWwindow *window)
+void drawInitTwoFixedBody()
+{
+    ImGuiIO &io = ImGui::GetIO();
+    ImVec2 window_size = ImVec2(io.DisplaySize.x, io.DisplaySize.y);
+    ImVec2 window_pos = ImVec2(0.0f, 0.0f);
+    ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
+    ImGui::SetNextWindowBgAlpha(0.0f);
+    ImGui::Begin("Controls", nullptr,
+                 ImGuiWindowFlags_NoDecoration |
+                     ImGuiWindowFlags_NoMove |
+                     ImGuiWindowFlags_NoSavedSettings |
+                     ImGuiWindowFlags_AlwaysAutoResize |
+                     ImGuiWindowFlags_NoBackground);
+    ImGui::BeginGroup();
+    ImVec2 button_size = ImVec2(140, 60);
+    if (ImGui::Button("Start", button_size))
+    {
+        vertices = std::vector<float>(numOfBodies * dimension);
+        for (int i = 0; i < numOfBodies; i++)
+        {
+            for (int j = 0; j < dimension; j++)
+            {
+                vertices[i * dimension + j] = bodies[i].coord[j] / 1000.0f;
+            }
+        }
+        shaderProgram = gui::Shader("resources/shaders/vertexShaders/threeBodies2d.ver",
+                                    "resources/shaders/fragmentShaders/threeBodies2d.frag");
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
+        glVertexAttribPointer(0, dimension, GL_FLOAT, GL_FALSE, dimension * sizeof(float), (void *)0);
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+        if (trail)
+        {
+            trailVertices = std::vector<trailStruct>(trailLength);
+            for (int j = 0; j < trailLength; j++)
+            {
+                trailVertices[j].x = vertices[0];
+                trailVertices[j].y = vertices[1];
+                trailVertices[j].index = j;
+            }
+
+            shaderProgramTrail = gui::Shader("resources/shaders/vertexShaders/threeBodies2dTrail.ver", "resources/shaders/fragmentShaders/threeBodies2dTrail.frag");
+
+            if (trailVAO != 0)
+            {
+                glBindVertexArray(0);
+                glDeleteVertexArrays(1, &trailVAO);
+            }
+            if (trailVBO != 0)
+            {
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+                glDeleteBuffers(1, &trailVBO);
+            }
+            glGenVertexArrays(1, &trailVAO);
+            glGenBuffers(1, &trailVBO);
+            glBindVertexArray(trailVAO);
+            glBindBuffer(GL_ARRAY_BUFFER, trailVBO);
+            glBufferData(GL_ARRAY_BUFFER, trailVertices.size() * sizeof(trailStruct), &trailVertices[0], GL_DYNAMIC_DRAW);
+            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(trailStruct), (void *)0);
+            glVertexAttribIPointer(1, 1, GL_INT, sizeof(trailStruct), (void *)(sizeof(float) * 2));
+            glEnableVertexAttribArray(0);
+            glEnableVertexAttribArray(1);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindVertexArray(0);
+        }
+        state = sim::States::Sim;
+    }
+    ImGui::Checkbox("Trail", &trail);
+    ImGui::Checkbox("Walls", &walls);
+    ImGui::Checkbox("Collisions", &collisions);
+    ImGui::EndGroup();
+    ImGui::SameLine();
+    ImGui::BeginGroup();
+    ImGui::Dummy(ImVec2(100.0f, 0.0f));
+    ImGui::SameLine();
+    ImGui::BeginGroup();
+
+    ImGui::Text("First body:");
+    ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
+    if (ImGui::InputFloat("mass1", &bodies[0].mass, 0.1f, 1.0f, "%.2f"))
+    {
+        bodies[0].mass = std::max(0.1f, std::min(bodies[0].mass, 1000.0f));
+    }
+    ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
+    if (ImGui::InputFloat("x1", &bodies[0].coord[0], 0.1f, 1.0f, "%.2f"))
+    {
+        bodies[0].coord[0] = std::max(-1000.0f, std::min(bodies[0].coord[0], 1000.0f));
+    }
+    ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
+    if (ImGui::InputFloat("y1", &bodies[0].coord[1], 0.1f, 1.0f, "%.2f"))
+    {
+        bodies[0].coord[1] = std::max(-1000.0f, std::min(bodies[0].coord[1], 1000.0f));
+    }
+    ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
+    if (ImGui::InputFloat("vx1", &bodies[0].veloc[0], 0.1f, 1.0f, "%.2f"))
+    {
+        bodies[0].veloc[0] = std::max(-1000.0f, std::min(bodies[0].veloc[0], 1000.0f));
+    }
+    ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
+    if (ImGui::InputFloat("vy1", &bodies[0].veloc[1], 0.1f, 1.0f, "%.2f"))
+    {
+        bodies[0].veloc[1] = std::max(-1000.0f, std::min(bodies[0].veloc[1], 1000.0f));
+    }
+    std::vector<const char *> inputFloatNames({"mass2", "x2", "y2", "mass3", "x3", "y3"});
+    for (int i = 1, j = 0; i < 3; i++)
+    {
+        switch (i)
+        {
+        case 1:
+            ImGui::Text("Second body:");
+            break;
+        case 2:
+            ImGui::Text("Third body:");
+            break;
+        }
+        ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
+        if (ImGui::InputFloat(inputFloatNames[j++], &bodies[i].mass, 0.1f, 1.0f, "%.2f"))
+        {
+            bodies[i].mass = std::max(0.1f, std::min(bodies[i].mass, 1000.0f));
+        }
+        for (int k = 0; k < dimension; k++)
+        {
+            ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
+            if (ImGui::InputFloat(inputFloatNames[j++], &bodies[i].coord[k], 0.1f, 1.0f, "%.2f"))
+            {
+                bodies[i].coord[k] = std::max(-1000.0f, std::min(bodies[i].coord[k], 1000.0f));
+            }
+        }
+    }
+    if (collisions)
+    {
+        ImGui::Text("Other:");
+        ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
+        if (ImGui::InputFloat("COR", &restitutionCoeff, 0.1f, 1.0f, "%.2f"))
+        {
+            restitutionCoeff = std::max(0.0f, std::min(restitutionCoeff, 1.0f));
+        }
+    }
+    ImGui::EndGroup();
+    ImGui::EndGroup();
+
+    ImGui::End();
+}
+
+void drawInitNBodySmall()
+{
+    ImGuiIO &io = ImGui::GetIO();
+    ImVec2 window_size = ImVec2(io.DisplaySize.x, io.DisplaySize.y);
+    ImVec2 window_pos = ImVec2(0.0f, 0.0f);
+    ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
+    ImGui::SetNextWindowBgAlpha(0.0f);
+    ImGui::Begin("Controls", nullptr,
+                 ImGuiWindowFlags_NoDecoration |
+                     ImGuiWindowFlags_NoMove |
+                     ImGuiWindowFlags_NoSavedSettings |
+                     ImGuiWindowFlags_AlwaysAutoResize |
+                     ImGuiWindowFlags_NoBackground);
+    ImGui::BeginGroup();
+    ImVec2 button_size = ImVec2(140, 60);
+    if (ImGui::Button("Start", button_size))
+    {
+        vertices = std::vector<float>(numOfBodies * dimension);
+        for (int i = 0; i < numOfBodies; i++)
+        {
+            for (int j = 0; j < dimension; j++)
+            {
+                vertices[i * dimension + j] = bodies[i].coord[j] / 1000.0f;
+            }
+        }
+        shaderProgram = gui::Shader("resources/shaders/vertexShaders/threeBodies2d.ver",
+                                    "resources/shaders/fragmentShaders/threeBodies2d.frag");
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
+        glVertexAttribPointer(0, dimension, GL_FLOAT, GL_FALSE, dimension * sizeof(float), (void *)0);
+
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+
+        if (trail)
+        {
+
+            trailVertices = std::vector<trailStruct>(trailLength * numOfBodies);
+            for (int i = 0; i < numOfBodies; i++)
+            {
+                for (int j = 0; j < trailLength; j++)
+                {
+                    trailVertices[i * trailLength + j].x = vertices[i * 2];
+                    trailVertices[i * trailLength + j].y = vertices[i * 2 + 1];
+                    trailVertices[i * trailLength + j].index = j;
+                }
+            }
+            shaderProgramTrail = gui::Shader("resources/shaders/vertexShaders/threeBodies2dTrail.ver", "resources/shaders/fragmentShaders/threeBodies2dTrail.frag");
+
+            if (trailVAO != 0)
+            {
+                glBindVertexArray(0);
+                glDeleteVertexArrays(1, &trailVAO);
+            }
+            if (trailVBO != 0)
+            {
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+                glDeleteBuffers(1, &trailVBO);
+            }
+            glGenVertexArrays(1, &trailVAO);
+            glGenBuffers(1, &trailVBO);
+            glBindVertexArray(trailVAO);
+            glBindBuffer(GL_ARRAY_BUFFER, trailVBO);
+            glBufferData(GL_ARRAY_BUFFER, trailVertices.size() * sizeof(trailStruct), &trailVertices[0], GL_DYNAMIC_DRAW);
+            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(trailStruct), (void *)0);
+            glVertexAttribIPointer(1, 1, GL_INT, sizeof(trailStruct), (void *)(sizeof(float) * 2));
+            glEnableVertexAttribArray(0);
+            glEnableVertexAttribArray(1);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindVertexArray(0);
+        }
+        state = sim::States::Sim;
+    }
+
+    ImGui::Checkbox("Trail", &trail);
+    ImGui::Checkbox("Walls", &walls);
+    ImGui::Checkbox("Collisions", &collisions);
+    ImGui::Text("Bodies:");
+    ImGui::SetCursorPosX(40);
+    if (ImGui::InputInt("Number of bodies", &numOfBodies, 1, 3))
+    {
+        numOfBodies = std::min(10, std::max(numOfBodies, 1));
+        while (bodies.size() < numOfBodies)
+        {
+            bodies.push_back(sim::Body(dimension));
+        }
+        while (bodies.size() > numOfBodies)
+        {
+            bodies.pop_back();
+        }
+        selectedBody = 0;
+    }
+    ImGui::SetCursorPosX(40);
+    if (ImGui::InputInt("Selected body", &selectedBody, 1, 3))
+    {
+        selectedBody = std::min(numOfBodies - 1, std::max(selectedBody, 0));
+    }
+    ImGui::SetCursorPosX(40);
+    if (ImGui::InputFloat("mass", &bodies[selectedBody].mass, 0.1f, 1.0f, "%.2f"))
+    {
+        bodies[selectedBody].mass = std::max(0.1f, std::min(bodies[selectedBody].mass, 1000.0f));
+    }
+    ImGui::SetCursorPosX(40);
+    if (ImGui::InputFloat("x", &bodies[selectedBody].coord[0], 0.1f, 1.0f, "%.2f"))
+    {
+        bodies[selectedBody].coord[0] = std::max(-1000.0f, std::min(bodies[selectedBody].coord[0], 1000.0f));
+    }
+    ImGui::SetCursorPosX(40);
+    if (ImGui::InputFloat("y", &bodies[selectedBody].coord[1], 0.1f, 1.0f, "%.2f"))
+    {
+        bodies[selectedBody].coord[1] = std::max(-1000.0f, std::min(bodies[selectedBody].coord[1], 1000.0f));
+    }
+    ImGui::SetCursorPosX(40);
+    if (ImGui::InputFloat("vx", &bodies[selectedBody].veloc[0], 0.1f, 1.0f, "%.2f"))
+    {
+        bodies[selectedBody].veloc[0] = std::max(-1000.0f, std::min(bodies[selectedBody].veloc[0], 1000.0f));
+    }
+    ImGui::SetCursorPosX(40);
+    if (ImGui::InputFloat("vy", &bodies[selectedBody].veloc[1], 0.1f, 1.0f, "%.2f"))
+    {
+        bodies[selectedBody].veloc[1] = std::max(-1000.0f, std::min(bodies[selectedBody].veloc[1], 1000.0f));
+    }
+    if (collisions)
+    {
+        ImGui::Text("Other:");
+        ImGui::SetCursorPosX(40);
+        if (ImGui::InputFloat("COR", &restitutionCoeff, 0.1f, 1.0f, "%.2f"))
+        {
+            restitutionCoeff = std::max(0.0f, std::min(restitutionCoeff, 1.0f));
+        }
+    }
+    ImGui::EndGroup();
+    ImGui::End();
+}
+
+void drawInitNBodyBig()
+{
+    ImGuiIO &io = ImGui::GetIO();
+    ImVec2 window_size = ImVec2(io.DisplaySize.x, io.DisplaySize.y);
+    ImVec2 window_pos = ImVec2(0.0f, 0.0f);
+    ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
+    ImGui::SetNextWindowBgAlpha(0.0f);
+    ImGui::Begin("Controls", nullptr,
+                 ImGuiWindowFlags_NoDecoration |
+                     ImGuiWindowFlags_NoMove |
+                     ImGuiWindowFlags_NoSavedSettings |
+                     ImGuiWindowFlags_AlwaysAutoResize |
+                     ImGuiWindowFlags_NoBackground);
+    ImGui::BeginGroup();
+    ImVec2 button_size = ImVec2(140, 60);
+    if (ImGui::Button("Start", button_size))
+    {
+        srand(time(NULL));
+        for (int i = 0; i < numOfBodies; i++)
+        {
+            bodies[i].mass = std::max((float)rand() / RAND_MAX, 0.1f) * 10.0f;
+            for (int j = 0; j < dimension; j++)
+            {
+                bodies[i].coord[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 1000.0f;
+                bodies[i].veloc[j] = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * 10.0f;
+            }
+        }
+        vertices = std::vector<float>(numOfBodies * dimension);
+        for (int i = 0; i < numOfBodies; i++)
+        {
+            for (int j = 0; j < dimension; j++)
+            {
+                vertices[i * dimension + j] = bodies[i].coord[j] / 1000.0f;
+            }
+        }
+        shaderProgram = gui::Shader("resources/shaders/vertexShaders/bigNBodies.ver",
+                                    "resources/shaders/fragmentShaders/bigNBodies.frag");
+
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
+        glVertexAttribPointer(0, dimension, GL_FLOAT, GL_FALSE, dimension * sizeof(float), (void *)0);
+
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+
+        state = sim::States::Sim;
+    }
+    ImGui::Checkbox("Walls", &walls);
+    ImGui::EndGroup();
+    ImGui::End();
+}
+
+void drawInitThreeBody3D()
+{
+    ImGuiIO &io = ImGui::GetIO();
+    ImVec2 window_size = ImVec2(io.DisplaySize.x, io.DisplaySize.y);
+    ImVec2 window_pos = ImVec2(0.0f, 0.0f);
+    ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
+    ImGui::SetNextWindowBgAlpha(0.0f);
+    ImGui::Begin("Controls", nullptr,
+                 ImGuiWindowFlags_NoDecoration |
+                     ImGuiWindowFlags_NoMove |
+                     ImGuiWindowFlags_NoSavedSettings |
+                     ImGuiWindowFlags_AlwaysAutoResize |
+                     ImGuiWindowFlags_NoBackground);
+    ImGui::BeginGroup();
+    ImVec2 button_size = ImVec2(140, 60);
+    if (ImGui::Button("Start", button_size))
+    {
+        vertices = std::vector<float>(numOfBodies * dimension);
+        for (int i = 0; i < numOfBodies; i++)
+        {
+            for (int j = 0; j < dimension; j++)
+            {
+                vertices[i * dimension + j] = bodies[i].coord[j] / 1000.0f;
+            }
+        }
+
+        shaderProgram = gui::Shader("resources/shaders/vertexShaders/threeBodies3d.ver",
+                                    "resources/shaders/fragmentShaders/threeBodies3d.frag");
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
+        glVertexAttribPointer(0, dimension, GL_FLOAT, GL_FALSE, dimension * sizeof(float), (void *)0);
+
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+
+        state = sim::States::Sim;
+    }
+    ImGui::Checkbox("Collisions", &collisions);
+
+    ImGui::EndGroup();
+    ImGui::SameLine();
+    ImGui::BeginGroup();
+    ImGui::Dummy(ImVec2(100.0f, 0.0f));
+    ImGui::SameLine();
+    ImGui::BeginGroup();
+    std::vector<const char *> inputFloatNames({"mass1", "x1", "y1", "z1", "vx1", "vy1", "vz1",
+                                               "mass2", "x2", "y2", "z2", "vx2", "vy2", "vz2",
+                                               "mass3", "x3", "y3", "z3", "vx3", "vy3", "vz3"});
+
+    for (int i = 0, j = 0; i < numOfBodies; i++)
+    {
+        switch (i)
+        {
+        case 0:
+            ImGui::Text("First body:");
+            break;
+        case 1:
+            ImGui::Text("Second body:");
+            break;
+        case 2:
+            ImGui::Text("Third body:");
+            break;
+        }
+
+        ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
+        if (ImGui::InputFloat(inputFloatNames[j++], &bodies[i].mass, 0.1f, 1.0f, "%.2f"))
+        {
+            bodies[i].mass = std::max(0.1f, std::min(bodies[i].mass, 1000.0f));
+        }
+        for (int k = 0; k < dimension; k++)
+        {
+            ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
+            if (ImGui::InputFloat(inputFloatNames[j++], &bodies[i].coord[k], 0.1f, 1.0f, "%.2f"))
+            {
+                bodies[i].coord[k] = std::max(-1000.0f, std::min(bodies[i].coord[k], 1000.0f));
+            }
+        }
+        for (int k = 0; k < dimension; k++)
+        {
+            ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
+            if (ImGui::InputFloat(inputFloatNames[j++], &bodies[i].veloc[k], 0.1f, 1.0f, "%.2f"))
+            {
+                bodies[i].veloc[k] = std::max(-1000.0f, std::min(bodies[i].veloc[k], 1000.0f));
+            }
+        }
+    }
+    if (collisions)
+    {
+        ImGui::Text("Other:");
+        ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
+        if (ImGui::InputFloat("COR", &restitutionCoeff, 0.1f, 1.0f, "%.2f"))
+        {
+            restitutionCoeff = std::max(0.0f, std::min(restitutionCoeff, 1.0f));
+        }
+    }
+    ImGui::EndGroup();
+    ImGui::EndGroup();
+
+    ImGui::End();
+}
+
+void drawSimThreeBody2D(GLFWwindow *window)
 {
     if (trail)
     {
@@ -647,343 +969,172 @@ void drawSim(GLFWwindow *window)
     glBindVertexArray(VAO);
     glDrawArrays(GL_POINTS, 0, numOfBodies);
 
-    if (option == sim::Option::ThreeBody3D)
+    std::vector<std::vector<double>> a(numOfBodies, std::vector<double>(dimension, 0));
+    for (int i = 0; i < numOfBodies; i++)
     {
-        projection = glm::mat4(1.0f);
-        projection = glm::perspective(glm::radians(camera.getFov()), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        shaderProgram.uniform4mat("projection", projection);
-        glm::mat4 view = camera.lookAt();
-        shaderProgram.uniform4mat("view", view);
+        for (int j = 0; j < numOfBodies; j++)
+        {
+            if (i != j)
+            {
+                std::vector<double> dCoord(dimension);
+                double distSqr = alpha * alpha;
+                for (int k = 0; k < dimension; k++)
+                {
+                    dCoord[k] = bodies[j].coord[k] - bodies[i].coord[k];
+                    distSqr += dCoord[k] * dCoord[k];
+                }
+                double invDist = 1.0 / sqrt(distSqr);
+                double invDist3 = invDist * invDist * invDist;
+                for (int k = 0; k < dimension; k++)
+                {
+                    a[i][k] += G * bodies[j].mass * dCoord[k] * invDist3;
+                }
+            }
+        }
     }
-
-    if (option == sim::Option::NBodyBig)
+    for (int i = 0; i < numOfBodies; i++)
     {
-        sim::QuadTree *qt = new sim::QuadTree(-1000.0, 1000.0, 1000.0, -1000.0);
-        for (int i = 0; i < numOfBodies; i++)
+        for (int j = 0; j < dimension; j++)
         {
-            qt->addBody(bodies[i]);
-        }
-        for (int i = 0; i < numOfBodies; i++)
-        {
-            std::vector<float> a = qt->calForce(bodies[i], G, alpha, theta);
-            for (int j = 0; j < dimension; j++)
+            bodies[i].veloc[j] += a[i][j] * deltaTime;
+            bodies[i].coord[j] += bodies[i].veloc[j] * deltaTime;
+
+            if (walls)
             {
-                bodies[i].veloc[j] += a[j] * deltaTime;
-                bodies[i].coord[j] += bodies[i].veloc[j] * deltaTime;
-                if (walls)
+                if (bodies[i].coord[0] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[0] > 0)
                 {
-                    if (bodies[i].coord[0] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[0] > 0)
-                    {
-                        bodies[i].veloc[0] *= -1;
-                    }
-                    else if (bodies[i].coord[0] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[i].veloc[0] < 0)
-                    {
-                        bodies[i].veloc[0] *= -1;
-                    }
-                    else if (bodies[i].coord[1] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[1] > 0)
-                    {
-                        bodies[i].veloc[1] *= -1;
-                    }
-                    else if (bodies[i].coord[1] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[i].veloc[1] < 0)
-                    {
-                        bodies[i].veloc[1] *= -1;
-                    }
+                    bodies[i].veloc[0] *= -1;
+                }
+                else if (bodies[i].coord[0] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[i].veloc[0] < 0)
+                {
+                    bodies[i].veloc[0] *= -1;
+                }
+                else if (bodies[i].coord[1] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[1] > 0)
+                {
+                    bodies[i].veloc[1] *= -1;
+                }
+                else if (bodies[i].coord[1] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[i].veloc[1] < 0)
+                {
+                    bodies[i].veloc[1] *= -1;
                 }
             }
-        }
-        for (int i = 0; i < numOfBodies; i++)
-        {
-            for (int j = 0; j < dimension; j++)
-            {
-                vertices[i * dimension + j] = bodies[i].coord[j] / 1000.0f;
-            }
-        }
-        delete qt;
-    }
-    else if (option == sim::Option::TwoFixedBody)
-    {
-        double a[2] = {0, 0};
-        for (int j = 1; j < numOfBodies; j++)
-        {
-            double dx = bodies[j].coord[0] - bodies[0].coord[0];
-            double dy = bodies[j].coord[1] - bodies[0].coord[1];
-            double distSqr = dx * dx + dy * dy + alpha * alpha;
-            double invDist = 1.0 / sqrt(distSqr);
-            double invDist3 = invDist * invDist * invDist;
 
-            a[0] += G * bodies[j].mass * dx * invDist3;
-            a[1] += G * bodies[j].mass * dy * invDist3;
-        }
-        bodies[0].veloc[0] += a[0] * deltaTime;
-        bodies[0].veloc[1] += a[1] * deltaTime;
-        bodies[0].coord[0] += bodies[0].veloc[0] * deltaTime;
-        bodies[0].coord[1] += bodies[0].veloc[1] * deltaTime;
-
-        /********************************************************************************************************************* */
-        /***********************************************Popraviti zidove****************************************************** */
-        /********************************************************************************************************************* */
-        if (walls)
-        {
-            if (bodies[0].coord[0] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[0].veloc[0] > 0)
+            if (collisions)
             {
-                bodies[0].veloc[0] *= -1;
-            }
-            else if (bodies[0].coord[0] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[0].veloc[0] < 0)
-            {
-                bodies[0].veloc[0] *= -1;
-            }
-            else if (bodies[0].coord[1] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[0].veloc[1] > 0)
-            {
-                bodies[0].veloc[1] *= -1;
-            }
-            else if (bodies[0].coord[1] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[0].veloc[1] < 0)
-            {
-                bodies[0].veloc[1] *= -1;
-            }
-        }
-
-        if (collisions)
-        {
-            for (int k = 1; k < numOfBodies; k++)
-            {
-                if (doCirclesOverlap(2, bodies[0].coord, radius, bodies[k].coord, radius))
+                for (int k = 0; k < numOfBodies; k++)
                 {
-                    float mi = bodies[0].mass;
-                    float mk = bodies[k].mass;
-
-                    std::vector<float> n(2);
-                    n[0] = bodies[k].coord[0] - bodies[0].coord[0];
-                    n[1] = bodies[k].coord[1] - bodies[0].coord[1];
-
-                    float nMagnitude = vectorMagnitude(n);
-                    std::vector<float> nNormal(2);
-                    nNormal[0] = n[0] / nMagnitude;
-                    nNormal[1] = n[1] / nMagnitude;
-
-                    if (restitutionCoeff == 1.0)
+                    if (k != i && doCirclesOverlap(2, bodies[i].coord, radius, bodies[k].coord, radius))
                     {
-                        std::vector<float> nTangent(2);
-                        nTangent[0] = -nNormal[1];
-                        nTangent[1] = nNormal[0];
+                        float mi = bodies[i].mass;
+                        float mk = bodies[k].mass;
 
-                        float viNormal = dotProduct(2, bodies[0].veloc, nNormal);
-                        float viTangent = dotProduct(2, bodies[0].veloc, nTangent);
-                        float vkNormal = dotProduct(2, bodies[k].veloc, nNormal);
-                        float vkTangent = dotProduct(2, bodies[k].veloc, nTangent);
-
-                        float viNormalNew = (viNormal * (mi - mk) + 2 * mk * vkNormal) / (mi + mk);
-                        float vkNormalNew = (vkNormal * (mi - mk) + 2 * mi * viNormal) / (mi + mk);
-
-                        bodies[0].veloc[0] += nNormal[0] * viNormalNew + nTangent[0] * viTangent;
-                        bodies[0].veloc[1] += nNormal[1] * viNormalNew + nTangent[1] * viTangent;
-                    }
-                    else if (restitutionCoeff == 0.0)
-                    {
-                        bodies[0].veloc[0] = 0;
-                        bodies[0].veloc[1] = 0;
-                    }
-                    else
-                    {
-                        std::vector<float> vRelative(2);
-                        vRelative[0] = bodies[0].veloc[0] - bodies[k].veloc[0];
-                        vRelative[1] = bodies[0].veloc[1] - bodies[k].veloc[1];
-
-                        float vRelNormal = dotProduct(2, vRelative, nNormal);
-                        float impulse = -(1.0 + restitutionCoeff) * vRelNormal / (1.0 / mi + 1.0 / mk);
-
-                        bodies[0].veloc[0] += impulse / mi * nNormal[0];
-                        bodies[0].veloc[1] += impulse / mi * nNormal[1];
-                    }
-
-                    break;
-                }
-            }
-        }
-
-        if (trail)
-        {
-            for (int j = 0; j < trailLength - 1; j++)
-            {
-                trailVertices[j].x = trailVertices[j + 1].x;
-                trailVertices[j].y = trailVertices[j + 1].y;
-            }
-            trailVertices[trailLength - 1].x = vertices[0];
-            trailVertices[trailLength - 1].y = vertices[1];
-        }
-        vertices[0] = bodies[0].coord[0] / 1000.0f;
-        vertices[1] = bodies[0].coord[1] / 1000.0f;
-    }
-    else
-    {
-        std::vector<std::vector<double>> a(numOfBodies, std::vector<double>(dimension, 0));
-        for (int i = 0; i < numOfBodies; i++)
-        {
-            for (int j = 0; j < numOfBodies; j++)
-            {
-                if (i != j)
-                {
-                    std::vector<double> dCoord(dimension);
-                    double distSqr = alpha * alpha;
-                    for (int k = 0; k < dimension; k++)
-                    {
-                        dCoord[k] = bodies[j].coord[k] - bodies[i].coord[k];
-                        distSqr += dCoord[k] * dCoord[k];
-                    }
-                    double invDist = 1.0 / sqrt(distSqr);
-                    double invDist3 = invDist * invDist * invDist;
-                    for (int k = 0; k < dimension; k++)
-                    {
-                        a[i][k] += G * bodies[j].mass * dCoord[k] * invDist3;
-                    }
-                }
-            }
-        }
-        for (int i = 0; i < numOfBodies; i++)
-        {
-            for (int j = 0; j < dimension; j++)
-            {
-                bodies[i].veloc[j] += a[i][j] * deltaTime;
-                bodies[i].coord[j] += bodies[i].veloc[j] * deltaTime;
-
-                /********************************************************************************************************************* */
-                /***********************************************Popraviti zidove****************************************************** */
-                /********************************************************************************************************************* */
-                if (walls)
-                {
-                    if (bodies[i].coord[0] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[0] > 0)
-                    {
-                        bodies[i].veloc[0] *= -1;
-                    }
-                    else if (bodies[i].coord[0] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[i].veloc[0] < 0)
-                    {
-                        bodies[i].veloc[0] *= -1;
-                    }
-                    else if (bodies[i].coord[1] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[1] > 0)
-                    {
-                        bodies[i].veloc[1] *= -1;
-                    }
-                    else if (bodies[i].coord[1] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[i].veloc[1] < 0)
-                    {
-                        bodies[i].veloc[1] *= -1;
-                    }
-                }
-
-                if (collisions)
-                {
-                    for (int k = 0; k < numOfBodies; k++)
-                    {
-                        if (k != i && doCirclesOverlap(2, bodies[i].coord, radius, bodies[k].coord, radius))
+                        std::vector<float> n(dimension);
+                        for (int l = 0; l < dimension; l++)
                         {
-                            float mi = bodies[i].mass;
-                            float mk = bodies[k].mass;
+                            n[l] = bodies[k].coord[l] - bodies[i].coord[l];
+                        }
 
-                            std::vector<float> n(dimension);
-                            for (int l = 0; l < dimension; l++)
+                        float nMagnitude = vectorMagnitude(n);
+                        std::vector<float> nNormal(dimension);
+                        for (int l = 0; l < dimension; l++)
+                        {
+                            nNormal[l] = n[l] / nMagnitude;
+                        }
+
+                        if (restitutionCoeff == 1.0)
+                        {
+                            if (dimension == 2)
                             {
-                                n[l] = bodies[k].coord[l] - bodies[i].coord[l];
-                            }
+                                std::vector<float> nTangent(2);
+                                nTangent[0] = -nNormal[1];
+                                nTangent[1] = nNormal[0];
 
-                            float nMagnitude = vectorMagnitude(n);
-                            std::vector<float> nNormal(dimension);
-                            for (int l = 0; l < dimension; l++)
-                            {
-                                nNormal[l] = n[l] / nMagnitude;
-                            }
+                                float viNormal = dotProduct(2, bodies[i].veloc, nNormal);
+                                float viTangent = dotProduct(2, bodies[i].veloc, nTangent);
+                                float vkNormal = dotProduct(2, bodies[k].veloc, nNormal);
+                                float vkTangent = dotProduct(2, bodies[k].veloc, nTangent);
 
-                            if (restitutionCoeff == 1.0)
-                            {
-                                if (dimension == 2)
-                                {
-                                    std::vector<float> nTangent(2);
-                                    nTangent[0] = -nNormal[1];
-                                    nTangent[1] = nNormal[0];
+                                float viNormalNew = (viNormal * (mi - mk) + 2 * mk * vkNormal) / (mi + mk);
+                                float vkNormalNew = (vkNormal * (mi - mk) + 2 * mi * viNormal) / (mi + mk);
 
-                                    float viNormal = dotProduct(2, bodies[i].veloc, nNormal);
-                                    float viTangent = dotProduct(2, bodies[i].veloc, nTangent);
-                                    float vkNormal = dotProduct(2, bodies[k].veloc, nNormal);
-                                    float vkTangent = dotProduct(2, bodies[k].veloc, nTangent);
+                                bodies[i].veloc[0] += nNormal[0] * viNormalNew + nTangent[0] * viTangent;
+                                bodies[i].veloc[1] += nNormal[1] * viNormalNew + nTangent[1] * viTangent;
 
-                                    float viNormalNew = (viNormal * (mi - mk) + 2 * mk * vkNormal) / (mi + mk);
-                                    float vkNormalNew = (vkNormal * (mi - mk) + 2 * mi * viNormal) / (mi + mk);
-
-                                    bodies[i].veloc[0] += nNormal[0] * viNormalNew + nTangent[0] * viTangent;
-                                    bodies[i].veloc[1] += nNormal[1] * viNormalNew + nTangent[1] * viTangent;
-
-                                    bodies[k].veloc[0] += nNormal[0] * vkNormalNew + nTangent[0] * vkTangent;
-                                    bodies[k].veloc[1] += nNormal[1] * vkNormalNew + nTangent[1] * vkTangent;
-                                }
-                                else
-                                {
-                                    std::vector<float> vRelative(3);
-                                    for (int l = 0; l < 3; l++)
-                                    {
-                                        vRelative[l] = bodies[i].veloc[l] - bodies[k].veloc[l];
-                                    }
-
-                                    float vRelNormal = dotProduct(3, vRelative, nNormal);
-                                    float impulse = 2 * vRelNormal / (mi + mk);
-
-                                    bodies[i].veloc[0] -= nNormal[0] * impulse * mk;
-                                    bodies[i].veloc[1] -= nNormal[1] * impulse * mk;
-                                    bodies[i].veloc[2] -= nNormal[2] * impulse * mk;
-
-                                    bodies[k].veloc[0] += nNormal[0] * impulse * mi;
-                                    bodies[k].veloc[1] += nNormal[1] * impulse * mi;
-                                    bodies[k].veloc[2] += nNormal[2] * impulse * mi;
-                                }
-                            }
-                            else if (restitutionCoeff == 0.0)
-                            {
-                                for (int l = 0; l < dimension; l++)
-                                {
-                                    bodies[i].veloc[l] = bodies[k].veloc[l] = (mi * bodies[i].veloc[l] + mk * bodies[k].veloc[l]) / (mi + mk);
-                                }
+                                bodies[k].veloc[0] += nNormal[0] * vkNormalNew + nTangent[0] * vkTangent;
+                                bodies[k].veloc[1] += nNormal[1] * vkNormalNew + nTangent[1] * vkTangent;
                             }
                             else
                             {
-                                std::vector<float> vRelative(dimension);
-                                for (int l = 0; l < dimension; l++)
+                                std::vector<float> vRelative(3);
+                                for (int l = 0; l < 3; l++)
                                 {
                                     vRelative[l] = bodies[i].veloc[l] - bodies[k].veloc[l];
                                 }
 
-                                float vRelNormal = dotProduct(dimension, vRelative, nNormal);
-                                float impulse = -(1.0 + restitutionCoeff) * vRelNormal / (1.0 / mi + 1.0 / mk);
+                                float vRelNormal = dotProduct(3, vRelative, nNormal);
+                                float impulse = 2 * vRelNormal / (mi + mk);
 
-                                for (int l = 0; l < dimension; l++)
-                                {
-                                    bodies[i].veloc[l] += impulse / mi * nNormal[l];
-                                }
+                                bodies[i].veloc[0] -= nNormal[0] * impulse * mk;
+                                bodies[i].veloc[1] -= nNormal[1] * impulse * mk;
+                                bodies[i].veloc[2] -= nNormal[2] * impulse * mk;
 
-                                for (int l = 0; l < dimension; l++)
-                                {
-                                    bodies[k].veloc[l] -= impulse / mk * nNormal[l];
-                                }
+                                bodies[k].veloc[0] += nNormal[0] * impulse * mi;
+                                bodies[k].veloc[1] += nNormal[1] * impulse * mi;
+                                bodies[k].veloc[2] += nNormal[2] * impulse * mi;
+                            }
+                        }
+                        else if (restitutionCoeff == 0.0)
+                        {
+                            for (int l = 0; l < dimension; l++)
+                            {
+                                bodies[i].veloc[l] = bodies[k].veloc[l] = (mi * bodies[i].veloc[l] + mk * bodies[k].veloc[l]) / (mi + mk);
+                            }
+                        }
+                        else
+                        {
+                            std::vector<float> vRelative(dimension);
+                            for (int l = 0; l < dimension; l++)
+                            {
+                                vRelative[l] = bodies[i].veloc[l] - bodies[k].veloc[l];
                             }
 
-                            break;
+                            float vRelNormal = dotProduct(dimension, vRelative, nNormal);
+                            float impulse = -(1.0 + restitutionCoeff) * vRelNormal / (1.0 / mi + 1.0 / mk);
+
+                            for (int l = 0; l < dimension; l++)
+                            {
+                                bodies[i].veloc[l] += impulse / mi * nNormal[l];
+                            }
+
+                            for (int l = 0; l < dimension; l++)
+                            {
+                                bodies[k].veloc[l] -= impulse / mk * nNormal[l];
+                            }
                         }
+
+                        break;
                     }
                 }
-
-                vertices[i * dimension + j] = bodies[i].coord[j] / 1000.0f;
             }
-        }
 
-        if (trail)
-        {
-            for (int i = 0; i < numOfBodies; i++)
-            {
-                for (int j = 0; j < trailLength - 1; j++)
-                {
-                    trailVertices[i * trailLength + j].x = trailVertices[i * trailLength + j + 1].x;
-                    trailVertices[i * trailLength + j].y = trailVertices[i * trailLength + j + 1].y;
-                }
-                trailVertices[(i + 1) * trailLength - 1].x = vertices[i * 2];
-                trailVertices[(i + 1) * trailLength - 1].y = vertices[i * 2 + 1];
-            }
+            vertices[i * dimension + j] = bodies[i].coord[j] / 1000.0f;
         }
     }
+
+    if (trail)
+    {
+        for (int i = 0; i < numOfBodies; i++)
+        {
+            for (int j = 0; j < trailLength - 1; j++)
+            {
+                trailVertices[i * trailLength + j].x = trailVertices[i * trailLength + j + 1].x;
+                trailVertices[i * trailLength + j].y = trailVertices[i * trailLength + j + 1].y;
+            }
+            trailVertices[(i + 1) * trailLength - 1].x = vertices[i * 2];
+            trailVertices[(i + 1) * trailLength - 1].y = vertices[i * 2 + 1];
+        }
+    }
+
     if (trail)
     {
         glBindBuffer(GL_ARRAY_BUFFER, trailVBO);
@@ -994,6 +1145,581 @@ void drawSim(GLFWwindow *window)
             glUnmapBuffer(GL_ARRAY_BUFFER);
         }
     }
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    void *ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(float), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+    if (ptr != NULL)
+    {
+        memcpy(ptr, vertices.data(), vertices.size() * sizeof(float));
+        glUnmapBuffer(GL_ARRAY_BUFFER);
+    }
+}
+
+void drawSimTwoFixedBody(GLFWwindow *window)
+{
+    if (trail)
+    {
+        shaderProgramTrail.use();
+        shaderProgramTrail.uniform1i("uMaxIndex", trailLength);
+        shaderProgramTrail.uniform1f("radius", radius);
+        glBindVertexArray(trailVAO);
+        glDrawArrays(GL_POINTS, 0, trailVertices.size());
+    }
+    shaderProgram.use();
+    shaderProgram.uniform1f("radius", radius);
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_POINTS, 0, numOfBodies);
+
+    double a[2] = {0, 0};
+    for (int j = 1; j < numOfBodies; j++)
+    {
+        double dx = bodies[j].coord[0] - bodies[0].coord[0];
+        double dy = bodies[j].coord[1] - bodies[0].coord[1];
+        double distSqr = dx * dx + dy * dy + alpha * alpha;
+        double invDist = 1.0 / sqrt(distSqr);
+        double invDist3 = invDist * invDist * invDist;
+
+        a[0] += G * bodies[j].mass * dx * invDist3;
+        a[1] += G * bodies[j].mass * dy * invDist3;
+    }
+    bodies[0].veloc[0] += a[0] * deltaTime;
+    bodies[0].veloc[1] += a[1] * deltaTime;
+    bodies[0].coord[0] += bodies[0].veloc[0] * deltaTime;
+    bodies[0].coord[1] += bodies[0].veloc[1] * deltaTime;
+
+    if (walls)
+    {
+        if (bodies[0].coord[0] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[0].veloc[0] > 0)
+        {
+            bodies[0].veloc[0] *= -1;
+        }
+        else if (bodies[0].coord[0] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[0].veloc[0] < 0)
+        {
+            bodies[0].veloc[0] *= -1;
+        }
+        else if (bodies[0].coord[1] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[0].veloc[1] > 0)
+        {
+            bodies[0].veloc[1] *= -1;
+        }
+        else if (bodies[0].coord[1] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[0].veloc[1] < 0)
+        {
+            bodies[0].veloc[1] *= -1;
+        }
+    }
+
+    if (collisions)
+    {
+        for (int k = 1; k < numOfBodies; k++)
+        {
+            if (doCirclesOverlap(2, bodies[0].coord, radius, bodies[k].coord, radius))
+            {
+                float mi = bodies[0].mass;
+                float mk = bodies[k].mass;
+
+                std::vector<float> n(2);
+                n[0] = bodies[k].coord[0] - bodies[0].coord[0];
+                n[1] = bodies[k].coord[1] - bodies[0].coord[1];
+
+                float nMagnitude = vectorMagnitude(n);
+                std::vector<float> nNormal(2);
+                nNormal[0] = n[0] / nMagnitude;
+                nNormal[1] = n[1] / nMagnitude;
+
+                if (restitutionCoeff == 1.0)
+                {
+                    std::vector<float> nTangent(2);
+                    nTangent[0] = -nNormal[1];
+                    nTangent[1] = nNormal[0];
+
+                    float viNormal = dotProduct(2, bodies[0].veloc, nNormal);
+                    float viTangent = dotProduct(2, bodies[0].veloc, nTangent);
+                    float vkNormal = dotProduct(2, bodies[k].veloc, nNormal);
+                    float vkTangent = dotProduct(2, bodies[k].veloc, nTangent);
+
+                    float viNormalNew = (viNormal * (mi - mk) + 2 * mk * vkNormal) / (mi + mk);
+                    float vkNormalNew = (vkNormal * (mi - mk) + 2 * mi * viNormal) / (mi + mk);
+
+                    bodies[0].veloc[0] += nNormal[0] * viNormalNew + nTangent[0] * viTangent;
+                    bodies[0].veloc[1] += nNormal[1] * viNormalNew + nTangent[1] * viTangent;
+                }
+                else if (restitutionCoeff == 0.0)
+                {
+                    bodies[0].veloc[0] = 0;
+                    bodies[0].veloc[1] = 0;
+                }
+                else
+                {
+                    std::vector<float> vRelative(2);
+                    vRelative[0] = bodies[0].veloc[0] - bodies[k].veloc[0];
+                    vRelative[1] = bodies[0].veloc[1] - bodies[k].veloc[1];
+
+                    float vRelNormal = dotProduct(2, vRelative, nNormal);
+                    float impulse = -(1.0 + restitutionCoeff) * vRelNormal / (1.0 / mi + 1.0 / mk);
+
+                    bodies[0].veloc[0] += impulse / mi * nNormal[0];
+                    bodies[0].veloc[1] += impulse / mi * nNormal[1];
+                }
+
+                break;
+            }
+        }
+    }
+
+    if (trail)
+    {
+        for (int j = 0; j < trailLength - 1; j++)
+        {
+            trailVertices[j].x = trailVertices[j + 1].x;
+            trailVertices[j].y = trailVertices[j + 1].y;
+        }
+        trailVertices[trailLength - 1].x = vertices[0];
+        trailVertices[trailLength - 1].y = vertices[1];
+    }
+    vertices[0] = bodies[0].coord[0] / 1000.0f;
+    vertices[1] = bodies[0].coord[1] / 1000.0f;
+
+    if (trail)
+    {
+        glBindBuffer(GL_ARRAY_BUFFER, trailVBO);
+        void *ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, trailVertices.size() * sizeof(trailStruct), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+        if (ptr != NULL)
+        {
+            memcpy(ptr, trailVertices.data(), trailVertices.size() * sizeof(trailStruct));
+            glUnmapBuffer(GL_ARRAY_BUFFER);
+        }
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    void *ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(float), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+    if (ptr != NULL)
+    {
+        memcpy(ptr, vertices.data(), vertices.size() * sizeof(float));
+        glUnmapBuffer(GL_ARRAY_BUFFER);
+    }
+}
+
+void drawSimNBodySmall(GLFWwindow *window)
+{
+    if (trail)
+    {
+        shaderProgramTrail.use();
+        shaderProgramTrail.uniform1i("uMaxIndex", trailLength);
+        shaderProgramTrail.uniform1f("radius", radius);
+        glBindVertexArray(trailVAO);
+        glDrawArrays(GL_POINTS, 0, trailVertices.size());
+    }
+    shaderProgram.use();
+    shaderProgram.uniform1f("radius", radius);
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_POINTS, 0, numOfBodies);
+
+    std::vector<std::vector<double>> a(numOfBodies, std::vector<double>(dimension, 0));
+    for (int i = 0; i < numOfBodies; i++)
+    {
+        for (int j = 0; j < numOfBodies; j++)
+        {
+            if (i != j)
+            {
+                std::vector<double> dCoord(dimension);
+                double distSqr = alpha * alpha;
+                for (int k = 0; k < dimension; k++)
+                {
+                    dCoord[k] = bodies[j].coord[k] - bodies[i].coord[k];
+                    distSqr += dCoord[k] * dCoord[k];
+                }
+                double invDist = 1.0 / sqrt(distSqr);
+                double invDist3 = invDist * invDist * invDist;
+                for (int k = 0; k < dimension; k++)
+                {
+                    a[i][k] += G * bodies[j].mass * dCoord[k] * invDist3;
+                }
+            }
+        }
+    }
+    for (int i = 0; i < numOfBodies; i++)
+    {
+        for (int j = 0; j < dimension; j++)
+        {
+            bodies[i].veloc[j] += a[i][j] * deltaTime;
+            bodies[i].coord[j] += bodies[i].veloc[j] * deltaTime;
+
+            if (walls)
+            {
+                if (bodies[i].coord[0] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[0] > 0)
+                {
+                    bodies[i].veloc[0] *= -1;
+                }
+                else if (bodies[i].coord[0] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[i].veloc[0] < 0)
+                {
+                    bodies[i].veloc[0] *= -1;
+                }
+                else if (bodies[i].coord[1] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[1] > 0)
+                {
+                    bodies[i].veloc[1] *= -1;
+                }
+                else if (bodies[i].coord[1] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[i].veloc[1] < 0)
+                {
+                    bodies[i].veloc[1] *= -1;
+                }
+            }
+
+            if (collisions)
+            {
+                for (int k = 0; k < numOfBodies; k++)
+                {
+                    if (k != i && doCirclesOverlap(2, bodies[i].coord, radius, bodies[k].coord, radius))
+                    {
+                        float mi = bodies[i].mass;
+                        float mk = bodies[k].mass;
+
+                        std::vector<float> n(dimension);
+                        for (int l = 0; l < dimension; l++)
+                        {
+                            n[l] = bodies[k].coord[l] - bodies[i].coord[l];
+                        }
+
+                        float nMagnitude = vectorMagnitude(n);
+                        std::vector<float> nNormal(dimension);
+                        for (int l = 0; l < dimension; l++)
+                        {
+                            nNormal[l] = n[l] / nMagnitude;
+                        }
+
+                        if (restitutionCoeff == 1.0)
+                        {
+                            if (dimension == 2)
+                            {
+                                std::vector<float> nTangent(2);
+                                nTangent[0] = -nNormal[1];
+                                nTangent[1] = nNormal[0];
+
+                                float viNormal = dotProduct(2, bodies[i].veloc, nNormal);
+                                float viTangent = dotProduct(2, bodies[i].veloc, nTangent);
+                                float vkNormal = dotProduct(2, bodies[k].veloc, nNormal);
+                                float vkTangent = dotProduct(2, bodies[k].veloc, nTangent);
+
+                                float viNormalNew = (viNormal * (mi - mk) + 2 * mk * vkNormal) / (mi + mk);
+                                float vkNormalNew = (vkNormal * (mi - mk) + 2 * mi * viNormal) / (mi + mk);
+
+                                bodies[i].veloc[0] += nNormal[0] * viNormalNew + nTangent[0] * viTangent;
+                                bodies[i].veloc[1] += nNormal[1] * viNormalNew + nTangent[1] * viTangent;
+
+                                bodies[k].veloc[0] += nNormal[0] * vkNormalNew + nTangent[0] * vkTangent;
+                                bodies[k].veloc[1] += nNormal[1] * vkNormalNew + nTangent[1] * vkTangent;
+                            }
+                            else
+                            {
+                                std::vector<float> vRelative(3);
+                                for (int l = 0; l < 3; l++)
+                                {
+                                    vRelative[l] = bodies[i].veloc[l] - bodies[k].veloc[l];
+                                }
+
+                                float vRelNormal = dotProduct(3, vRelative, nNormal);
+                                float impulse = 2 * vRelNormal / (mi + mk);
+
+                                bodies[i].veloc[0] -= nNormal[0] * impulse * mk;
+                                bodies[i].veloc[1] -= nNormal[1] * impulse * mk;
+                                bodies[i].veloc[2] -= nNormal[2] * impulse * mk;
+
+                                bodies[k].veloc[0] += nNormal[0] * impulse * mi;
+                                bodies[k].veloc[1] += nNormal[1] * impulse * mi;
+                                bodies[k].veloc[2] += nNormal[2] * impulse * mi;
+                            }
+                        }
+                        else if (restitutionCoeff == 0.0)
+                        {
+                            for (int l = 0; l < dimension; l++)
+                            {
+                                bodies[i].veloc[l] = bodies[k].veloc[l] = (mi * bodies[i].veloc[l] + mk * bodies[k].veloc[l]) / (mi + mk);
+                            }
+                        }
+                        else
+                        {
+                            std::vector<float> vRelative(dimension);
+                            for (int l = 0; l < dimension; l++)
+                            {
+                                vRelative[l] = bodies[i].veloc[l] - bodies[k].veloc[l];
+                            }
+
+                            float vRelNormal = dotProduct(dimension, vRelative, nNormal);
+                            float impulse = -(1.0 + restitutionCoeff) * vRelNormal / (1.0 / mi + 1.0 / mk);
+
+                            for (int l = 0; l < dimension; l++)
+                            {
+                                bodies[i].veloc[l] += impulse / mi * nNormal[l];
+                            }
+
+                            for (int l = 0; l < dimension; l++)
+                            {
+                                bodies[k].veloc[l] -= impulse / mk * nNormal[l];
+                            }
+                        }
+
+                        break;
+                    }
+                }
+            }
+
+            vertices[i * dimension + j] = bodies[i].coord[j] / 1000.0f;
+        }
+    }
+
+    if (trail)
+    {
+        for (int i = 0; i < numOfBodies; i++)
+        {
+            for (int j = 0; j < trailLength - 1; j++)
+            {
+                trailVertices[i * trailLength + j].x = trailVertices[i * trailLength + j + 1].x;
+                trailVertices[i * trailLength + j].y = trailVertices[i * trailLength + j + 1].y;
+            }
+            trailVertices[(i + 1) * trailLength - 1].x = vertices[i * 2];
+            trailVertices[(i + 1) * trailLength - 1].y = vertices[i * 2 + 1];
+        }
+    }
+
+    if (trail)
+    {
+        glBindBuffer(GL_ARRAY_BUFFER, trailVBO);
+        void *ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, trailVertices.size() * sizeof(trailStruct), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+        if (ptr != NULL)
+        {
+            memcpy(ptr, trailVertices.data(), trailVertices.size() * sizeof(trailStruct));
+            glUnmapBuffer(GL_ARRAY_BUFFER);
+        }
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    void *ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(float), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+    if (ptr != NULL)
+    {
+        memcpy(ptr, vertices.data(), vertices.size() * sizeof(float));
+        glUnmapBuffer(GL_ARRAY_BUFFER);
+    }
+}
+
+void drawSimNBodyBig(GLFWwindow *window)
+{
+    shaderProgram.use();
+    shaderProgram.uniform1f("radius", radius);
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_POINTS, 0, numOfBodies);
+
+    sim::QuadTree *qt = new sim::QuadTree(-1000.0, 1000.0, 1000.0, -1000.0);
+    for (int i = 0; i < numOfBodies; i++)
+    {
+        qt->addBody(bodies[i]);
+    }
+    for (int i = 0; i < numOfBodies; i++)
+    {
+        std::vector<float> a = qt->calForce(bodies[i], G, alpha, theta);
+        for (int j = 0; j < dimension; j++)
+        {
+            bodies[i].veloc[j] += a[j] * deltaTime;
+            bodies[i].coord[j] += bodies[i].veloc[j] * deltaTime;
+            if (walls)
+            {
+                if (bodies[i].coord[0] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[0] > 0)
+                {
+                    bodies[i].veloc[0] *= -1;
+                }
+                else if (bodies[i].coord[0] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[i].veloc[0] < 0)
+                {
+                    bodies[i].veloc[0] *= -1;
+                }
+                else if (bodies[i].coord[1] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[1] > 0)
+                {
+                    bodies[i].veloc[1] *= -1;
+                }
+                else if (bodies[i].coord[1] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[i].veloc[1] < 0)
+                {
+                    bodies[i].veloc[1] *= -1;
+                }
+            }
+        }
+    }
+    for (int i = 0; i < numOfBodies; i++)
+    {
+        for (int j = 0; j < dimension; j++)
+        {
+            vertices[i * dimension + j] = bodies[i].coord[j] / 1000.0f;
+        }
+    }
+    delete qt;
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    void *ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(float), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+    if (ptr != NULL)
+    {
+        memcpy(ptr, vertices.data(), vertices.size() * sizeof(float));
+        glUnmapBuffer(GL_ARRAY_BUFFER);
+    }
+}
+
+void drawSimThreeBody3D(GLFWwindow *window)
+{
+    shaderProgram.use();
+    shaderProgram.uniform1f("radius", radius);
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_POINTS, 0, numOfBodies);
+
+    projection = glm::mat4(1.0f);
+    projection = glm::perspective(glm::radians(camera.getFov()), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    shaderProgram.uniform4mat("projection", projection);
+    glm::mat4 view = camera.lookAt();
+    shaderProgram.uniform4mat("view", view);
+
+    std::vector<std::vector<double>> a(numOfBodies, std::vector<double>(dimension, 0));
+    for (int i = 0; i < numOfBodies; i++)
+    {
+        for (int j = 0; j < numOfBodies; j++)
+        {
+            if (i != j)
+            {
+                std::vector<double> dCoord(dimension);
+                double distSqr = alpha * alpha;
+                for (int k = 0; k < dimension; k++)
+                {
+                    dCoord[k] = bodies[j].coord[k] - bodies[i].coord[k];
+                    distSqr += dCoord[k] * dCoord[k];
+                }
+                double invDist = 1.0 / sqrt(distSqr);
+                double invDist3 = invDist * invDist * invDist;
+                for (int k = 0; k < dimension; k++)
+                {
+                    a[i][k] += G * bodies[j].mass * dCoord[k] * invDist3;
+                }
+            }
+        }
+    }
+    for (int i = 0; i < numOfBodies; i++)
+    {
+        for (int j = 0; j < dimension; j++)
+        {
+            bodies[i].veloc[j] += a[i][j] * deltaTime;
+            bodies[i].coord[j] += bodies[i].veloc[j] * deltaTime;
+
+            if (walls)
+            {
+                if (bodies[i].coord[0] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[0] > 0)
+                {
+                    bodies[i].veloc[0] *= -1;
+                }
+                else if (bodies[i].coord[0] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[i].veloc[0] < 0)
+                {
+                    bodies[i].veloc[0] *= -1;
+                }
+                else if (bodies[i].coord[1] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[1] > 0)
+                {
+                    bodies[i].veloc[1] *= -1;
+                }
+                else if (bodies[i].coord[1] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[i].veloc[1] < 0)
+                {
+                    bodies[i].veloc[1] *= -1;
+                }
+            }
+
+            if (collisions)
+            {
+                for (int k = 0; k < numOfBodies; k++)
+                {
+                    if (k != i && doCirclesOverlap(2, bodies[i].coord, radius, bodies[k].coord, radius))
+                    {
+                        float mi = bodies[i].mass;
+                        float mk = bodies[k].mass;
+
+                        std::vector<float> n(dimension);
+                        for (int l = 0; l < dimension; l++)
+                        {
+                            n[l] = bodies[k].coord[l] - bodies[i].coord[l];
+                        }
+
+                        float nMagnitude = vectorMagnitude(n);
+                        std::vector<float> nNormal(dimension);
+                        for (int l = 0; l < dimension; l++)
+                        {
+                            nNormal[l] = n[l] / nMagnitude;
+                        }
+
+                        if (restitutionCoeff == 1.0)
+                        {
+                            if (dimension == 2)
+                            {
+                                std::vector<float> nTangent(2);
+                                nTangent[0] = -nNormal[1];
+                                nTangent[1] = nNormal[0];
+
+                                float viNormal = dotProduct(2, bodies[i].veloc, nNormal);
+                                float viTangent = dotProduct(2, bodies[i].veloc, nTangent);
+                                float vkNormal = dotProduct(2, bodies[k].veloc, nNormal);
+                                float vkTangent = dotProduct(2, bodies[k].veloc, nTangent);
+
+                                float viNormalNew = (viNormal * (mi - mk) + 2 * mk * vkNormal) / (mi + mk);
+                                float vkNormalNew = (vkNormal * (mi - mk) + 2 * mi * viNormal) / (mi + mk);
+
+                                bodies[i].veloc[0] += nNormal[0] * viNormalNew + nTangent[0] * viTangent;
+                                bodies[i].veloc[1] += nNormal[1] * viNormalNew + nTangent[1] * viTangent;
+
+                                bodies[k].veloc[0] += nNormal[0] * vkNormalNew + nTangent[0] * vkTangent;
+                                bodies[k].veloc[1] += nNormal[1] * vkNormalNew + nTangent[1] * vkTangent;
+                            }
+                            else
+                            {
+                                std::vector<float> vRelative(3);
+                                for (int l = 0; l < 3; l++)
+                                {
+                                    vRelative[l] = bodies[i].veloc[l] - bodies[k].veloc[l];
+                                }
+
+                                float vRelNormal = dotProduct(3, vRelative, nNormal);
+                                float impulse = 2 * vRelNormal / (mi + mk);
+
+                                bodies[i].veloc[0] -= nNormal[0] * impulse * mk;
+                                bodies[i].veloc[1] -= nNormal[1] * impulse * mk;
+                                bodies[i].veloc[2] -= nNormal[2] * impulse * mk;
+
+                                bodies[k].veloc[0] += nNormal[0] * impulse * mi;
+                                bodies[k].veloc[1] += nNormal[1] * impulse * mi;
+                                bodies[k].veloc[2] += nNormal[2] * impulse * mi;
+                            }
+                        }
+                        else if (restitutionCoeff == 0.0)
+                        {
+                            for (int l = 0; l < dimension; l++)
+                            {
+                                bodies[i].veloc[l] = bodies[k].veloc[l] = (mi * bodies[i].veloc[l] + mk * bodies[k].veloc[l]) / (mi + mk);
+                            }
+                        }
+                        else
+                        {
+                            std::vector<float> vRelative(dimension);
+                            for (int l = 0; l < dimension; l++)
+                            {
+                                vRelative[l] = bodies[i].veloc[l] - bodies[k].veloc[l];
+                            }
+
+                            float vRelNormal = dotProduct(dimension, vRelative, nNormal);
+                            float impulse = -(1.0 + restitutionCoeff) * vRelNormal / (1.0 / mi + 1.0 / mk);
+
+                            for (int l = 0; l < dimension; l++)
+                            {
+                                bodies[i].veloc[l] += impulse / mi * nNormal[l];
+                            }
+
+                            for (int l = 0; l < dimension; l++)
+                            {
+                                bodies[k].veloc[l] -= impulse / mk * nNormal[l];
+                            }
+                        }
+
+                        break;
+                    }
+                }
+            }
+
+            vertices[i * dimension + j] = bodies[i].coord[j] / 1000.0f;
+        }
+    }
+
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     void *ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(float), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
     if (ptr != NULL)
