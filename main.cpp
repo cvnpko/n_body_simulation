@@ -484,7 +484,8 @@ void drawInitThreeBody2D()
                      ImGuiWindowFlags_AlwaysAutoResize |
                      ImGuiWindowFlags_NoBackground);
     ImGui::BeginGroup();
-    ImVec2 button_size = ImVec2(140, 60);
+    ImVec2 button_size = ImVec2(window_size.x / 4.0f, window_size.y / 15.5f);
+    ImGui::SetCursorPos(ImVec2((window_size.x - button_size.x) / 2.0f, 20));
     if (ImGui::Button("Start", button_size))
     {
         vertices = std::vector<float>(numOfBodies * dimension);
@@ -546,15 +547,15 @@ void drawInitThreeBody2D()
         }
         state = sim::States::Sim;
     }
-    ImGui::Checkbox("Trail", &trail);
-    ImGui::Checkbox("Walls", &walls);
-    ImGui::Checkbox("Collisions", &collisions);
     ImGui::EndGroup();
     ImGui::SameLine();
     ImGui::BeginGroup();
-    ImGui::Dummy(ImVec2(100.0f, 0.0f));
     ImGui::SameLine();
+    ImGui::SetCursorPos(ImVec2(window_size.x / 2.25f - button_size.x / 3.5f, 100.0f));
     ImGui::BeginGroup();
+    ImGui::Checkbox("Trail", &trail);
+    ImGui::Checkbox("Walls", &walls);
+    ImGui::Checkbox("Collisions", &collisions);
     std::vector<const char *> inputFloatNames({"mass1", "x1", "y1", "vx1", "vy1",
                                                "mass2", "x2", "y2", "vx2", "vy2",
                                                "mass3", "x3", "y3", "vx3", "vy3"});
@@ -573,14 +574,12 @@ void drawInitThreeBody2D()
             break;
         }
 
-        ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
         if (ImGui::InputFloat(inputFloatNames[j++], &bodies[i].mass, 0.1f, 1.0f, "%.2f"))
         {
             bodies[i].mass = std::max(0.1f, std::min(bodies[i].mass, 1000.0f));
         }
         for (int k = 0; k < dimension; k++)
         {
-            ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
             if (ImGui::InputFloat(inputFloatNames[j++], &bodies[i].coord[k], 0.1f, 1.0f, "%.2f"))
             {
                 bodies[i].coord[k] = std::max(-1000.0f, std::min(bodies[i].coord[k], 1000.0f));
@@ -588,7 +587,6 @@ void drawInitThreeBody2D()
         }
         for (int k = 0; k < dimension; k++)
         {
-            ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
             if (ImGui::InputFloat(inputFloatNames[j++], &bodies[i].veloc[k], 0.1f, 1.0f, "%.2f"))
             {
                 bodies[i].veloc[k] = std::max(-1000.0f, std::min(bodies[i].veloc[k], 1000.0f));
@@ -598,7 +596,6 @@ void drawInitThreeBody2D()
     if (collisions)
     {
         ImGui::Text("Other:");
-        ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 100);
         if (ImGui::InputFloat("COR", &restitutionCoeff, 0.1f, 1.0f, "%.2f"))
         {
             restitutionCoeff = std::max(0.0f, std::min(restitutionCoeff, 1.0f));
