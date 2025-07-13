@@ -899,7 +899,8 @@ void drawInitNBodyBig()
                      ImGuiWindowFlags_AlwaysAutoResize |
                      ImGuiWindowFlags_NoBackground);
     ImGui::BeginGroup();
-    ImVec2 button_size = ImVec2(140, 60);
+    ImVec2 button_size = ImVec2(window_size.x / 3.0f, window_size.y / 12.0f);
+    ImGui::SetCursorPos(ImVec2((window_size.x - button_size.x) / 2.0f, window_size.y / 2.0f - button_size.y));
     if (ImGui::Button("Start", button_size))
     {
         vertices = std::vector<float>(numOfBodies * dimension);
@@ -926,6 +927,8 @@ void drawInitNBodyBig()
 
         state = sim::States::Sim;
     }
+    ImGui::SameLine();
+    ImGui::SetCursorPos(ImVec2((window_size.x + button_size.x) / 2.75f, window_size.y / 2.0f - button_size.y + 100));
     ImGui::Checkbox("Walls", &walls);
     ImGui::EndGroup();
     ImGui::End();
