@@ -33,9 +33,9 @@ GLFWimage loadIcon(const char *filename);
 
 void draw(GLFWwindow *window);
 void drawMenu();
-void drawInit();
+void drawInit(GLFWwindow *window);
 void drawInitThreeBody2D();
-void drawInitThreeBody3D();
+void drawInitThreeBody3D(GLFWwindow *window);
 void drawInitTwoFixedBody();
 void drawInitNBodySmall();
 void drawInitNBodyBig();
@@ -204,6 +204,10 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
     {
         if (state == sim::States::Sim)
         {
+            if (option == sim::Option::ThreeBody3D)
+            {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            }
             state = sim::States::Init;
             glBindVertexArray(0);
             glDeleteVertexArrays(1, &VAO);
@@ -261,7 +265,7 @@ void draw(GLFWwindow *window)
     }
     else if (state == sim::States::Init)
     {
-        drawInit();
+        drawInit(window);
     }
     else if (state == sim::States::Sim)
     {
@@ -426,7 +430,7 @@ void drawMenu()
     ImGui::End();
 }
 
-void drawInit()
+void drawInit(GLFWwindow *window)
 {
     switch (option)
     {
@@ -443,7 +447,7 @@ void drawInit()
         drawInitNBodyBig();
         break;
     case sim::Option::ThreeBody3D:
-        drawInitThreeBody3D();
+        drawInitThreeBody3D(window);
         break;
     }
 }
@@ -932,7 +936,7 @@ void drawInitNBodyBig()
     ImGui::End();
 }
 
-void drawInitThreeBody3D()
+void drawInitThreeBody3D(GLFWwindow *window)
 {
     ImGuiIO &io = ImGui::GetIO();
     ImVec2 window_size = ImVec2(io.DisplaySize.x, io.DisplaySize.y);
@@ -984,6 +988,7 @@ void drawInitThreeBody3D()
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
 
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         state = sim::States::Sim;
     }
     ImGui::EndGroup();
