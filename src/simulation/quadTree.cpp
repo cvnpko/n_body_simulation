@@ -13,8 +13,9 @@ namespace sim
             }
         }
     }
-    QuadTree::QuadTree(float left, float right, float up, float down)
-        : depth(10), mass(0), leftBorder(left), rightBorder(right), upBorder(up), downBorder(down)
+
+    QuadTree::QuadTree(float radius, float left, float right, float up, float down)
+        : radius(radius), depth(10), mass(0), leftBorder(left), rightBorder(right), upBorder(up), downBorder(down)
     {
         for (int i = 0; i < 2; i++)
         {
@@ -24,8 +25,9 @@ namespace sim
             }
         }
     }
-    QuadTree::QuadTree(float left, float right, float up, float down, int depth)
-        : depth(depth), mass(0), leftBorder(left), rightBorder(right), upBorder(up), downBorder(down)
+
+    QuadTree::QuadTree(float radius, float left, float right, float up, float down, int depth)
+        : radius(radius), depth(depth), mass(0), leftBorder(left), rightBorder(right), upBorder(up), downBorder(down)
     {
         for (int i = 0; i < 2; i++)
         {
@@ -35,6 +37,7 @@ namespace sim
             }
         }
     }
+
     void QuadTree::addBody(Body body)
     {
         if (mass == 0)
@@ -59,7 +62,7 @@ namespace sim
                 {
                     if (children[0][0] == nullptr)
                     {
-                        children[0][0] = new QuadTree(leftBorder, sHor, sVer, downBorder, depth - 1);
+                        children[0][0] = new QuadTree(radius, leftBorder, sHor, sVer, downBorder, depth - 1);
                     }
                     children[0][0]->addBody(body);
                 }
@@ -67,7 +70,7 @@ namespace sim
                 {
                     if (children[1][0] == nullptr)
                     {
-                        children[1][0] = new QuadTree(leftBorder, sHor, upBorder, sVer, depth - 1);
+                        children[1][0] = new QuadTree(radius, leftBorder, sHor, upBorder, sVer, depth - 1);
                     }
                     children[1][0]->addBody(body);
                 }
@@ -78,7 +81,7 @@ namespace sim
                 {
                     if (children[0][1] == nullptr)
                     {
-                        children[0][1] = new QuadTree(sHor, rightBorder, sVer, downBorder, depth - 1);
+                        children[0][1] = new QuadTree(radius, sHor, rightBorder, sVer, downBorder, depth - 1);
                     }
                     children[0][1]->addBody(body);
                 }
@@ -86,7 +89,7 @@ namespace sim
                 {
                     if (children[1][1] == nullptr)
                     {
-                        children[1][1] = new QuadTree(sHor, rightBorder, upBorder, sVer, depth - 1);
+                        children[1][1] = new QuadTree(radius, sHor, rightBorder, upBorder, sVer, depth - 1);
                     }
                     children[1][1]->addBody(body);
                 }
@@ -97,6 +100,7 @@ namespace sim
             bodies.push_back(body);
         }
     }
+
     std::vector<float> QuadTree::calForce(Body body, float G, float alpha, float theta)
     {
         if (mass == 0)
@@ -110,7 +114,12 @@ namespace sim
             {
                 float dx = bodies[i].coord[0] - body.coord[0];
                 float dy = bodies[i].coord[1] - body.coord[1];
-                float distSqr = dx * dx + dy * dy + alpha * alpha;
+                float distSqr = dx * dx + dy * dy;
+                if (distSqr <= 4 * radius * radius)
+                {
+                    continue;
+                }
+                distSqr += alpha * alpha;
                 float invDist = 1.0 / sqrt(distSqr);
                 float invDist3 = invDist * invDist * invDist;
 

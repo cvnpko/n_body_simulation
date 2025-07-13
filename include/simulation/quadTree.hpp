@@ -10,8 +10,8 @@ namespace sim
     class QuadTree
     {
     public:
-        QuadTree(float left, float right, float up, float down);
-        QuadTree(float left, float right, float up, float down, int depth);
+        QuadTree(float radius, float left, float right, float up, float down);
+        QuadTree(float radius, float left, float right, float up, float down, int depth);
         ~QuadTree();
 
         void addBody(Body body);
@@ -20,7 +20,7 @@ namespace sim
     private:
         int depth;
         float massCentreX, massCentreY;
-        float mass;
+        float mass, radius;
         float leftBorder, rightBorder, upBorder, downBorder;
 
         QuadTree *children[2][2];
