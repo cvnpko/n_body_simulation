@@ -383,27 +383,27 @@ void drawMenu()
                 }
                 break;
             case sim::Option::ThreeBody3D:
-                bodies[0].coord[0] = -100.0f;
+                bodies[0].coord[0] = -200.0f;
                 bodies[0].coord[1] = 0.0f;
                 bodies[0].coord[2] = 0.0f;
                 bodies[0].veloc[0] = 0.0f;
                 bodies[0].veloc[1] = 0.0f;
                 bodies[0].coord[2] = 0.0f;
-                bodies[0].mass = 1.0f;
+                bodies[0].mass = 5.0f;
                 bodies[1].coord[0] = 0.0f;
                 bodies[1].coord[1] = 0.0f;
                 bodies[1].coord[2] = 0.0f;
                 bodies[1].veloc[0] = 0.0f;
                 bodies[1].veloc[1] = 0.0f;
                 bodies[1].coord[2] = 0.0f;
-                bodies[1].mass = 1.0f;
-                bodies[2].coord[0] = 100.0f;
+                bodies[1].mass = 5.0f;
+                bodies[2].coord[0] = 200.0f;
                 bodies[2].coord[1] = 0.0f;
                 bodies[2].coord[2] = 0.0f;
                 bodies[2].veloc[0] = 0.0f;
                 bodies[2].veloc[1] = 0.0f;
                 bodies[2].coord[2] = 0.0f;
-                bodies[2].mass = 1.0f;
+                bodies[2].mass = 5.0f;
                 break;
             }
         }

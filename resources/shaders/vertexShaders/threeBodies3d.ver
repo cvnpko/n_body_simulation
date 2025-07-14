@@ -10,5 +10,5 @@ void main()
     vec4 viewPos = view * vec4(aPos, 1.0);
     gl_Position = projection * viewPos;
     float distance = -viewPos.z;
-    gl_PointSize = radius/distance*1.22;
+    gl_PointSize = radius/distance*2.44;
 }
