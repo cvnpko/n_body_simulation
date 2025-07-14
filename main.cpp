@@ -25,7 +25,6 @@
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void processInput(GLFWwindow *window);
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void mouse_callback(GLFWwindow *window, double xposIn, double yposIn);
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods);
 
@@ -109,7 +108,6 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
-    glfwSetScrollCallback(window, scroll_callback);
     glfwSetKeyCallback(window, key_callback);
     GLFWimage icon = loadIcon("resources/images/icon.png");
     glfwSetWindowIcon(window, 1, &icon);
@@ -241,10 +239,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         infos = !infos;
     }
 }
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
-{
-    camera.updateFov(yoffset);
-}
 void mouse_callback(GLFWwindow *window, double xposIn, double yposIn)
 {
     camera.updateMouse(xposIn, yposIn);
@@ -311,7 +305,7 @@ void drawMenu()
             switch (option)
             {
             case sim::Option::ThreeBody2D:
-                radius = 50.0f;
+                radius = 30.0f;
                 numOfBodies = 3;
                 dimension = 2;
                 break;
@@ -331,7 +325,7 @@ void drawMenu()
                 dimension = 2;
                 break;
             case sim::Option::ThreeBody3D:
-                radius = 30.0f;
+                radius = 100.0f;
                 numOfBodies = 3;
                 dimension = 3;
                 break;
@@ -389,7 +383,7 @@ void drawMenu()
                 }
                 break;
             case sim::Option::ThreeBody3D:
-                bodies[0].coord[0] = 0.0f;
+                bodies[0].coord[0] = -100.0f;
                 bodies[0].coord[1] = 0.0f;
                 bodies[0].coord[2] = 0.0f;
                 bodies[0].veloc[0] = 0.0f;
@@ -403,7 +397,7 @@ void drawMenu()
                 bodies[1].veloc[1] = 0.0f;
                 bodies[1].coord[2] = 0.0f;
                 bodies[1].mass = 1.0f;
-                bodies[2].coord[0] = 0.0f;
+                bodies[2].coord[0] = 100.0f;
                 bodies[2].coord[1] = 0.0f;
                 bodies[2].coord[2] = 0.0f;
                 bodies[2].veloc[0] = 0.0f;
@@ -1747,131 +1741,74 @@ void drawSimThreeBody3D(GLFWwindow *window)
             }
         }
     }
+
     for (int i = 0; i < numOfBodies; i++)
     {
         for (int j = 0; j < dimension; j++)
         {
             bodies[i].veloc[j] += a[i][j] * deltaTime;
+        }
+    }
+
+    if (collisions)
+    {
+        for (int i = 0; i < numOfBodies; i++)
+        {
+            for (int k = i + 1; k < numOfBodies; k++)
+            {
+                std::vector<float> n(dimension, 0.0f);
+                float distSqr = 0.0f;
+                for (int l = 0; l < dimension; l++)
+                {
+                    n[l] = bodies[i].coord[l] - bodies[k].coord[l];
+                    distSqr += n[l] * n[l];
+                }
+
+                float rSum = 2 * radius;
+                if (distSqr > rSum * rSum)
+                {
+                    continue;
+                }
+
+                float dist = sqrt(distSqr);
+
+                std::vector<float> nNormal(dimension);
+                for (int l = 0; l < dimension; l++)
+                {
+                    nNormal[l] = n[l] / dist;
+                }
+
+                float mi = bodies[i].mass;
+                float mk = bodies[k].mass;
+
+                std::vector<float> vRel(dimension);
+                for (int l = 0; l < dimension; l++)
+                {
+                    vRel[l] = bodies[i].veloc[l] - bodies[k].veloc[l];
+                }
+
+                float vRelNormal = dotProduct(dimension, vRel, nNormal);
+                if (vRelNormal > 0)
+                {
+                    continue;
+                }
+
+                float impulse = -(1.0f + restitutionCoeff) * vRelNormal / (1.0f / mi + 1.0f / mk);
+
+                for (int l = 0; l < dimension; l++)
+                {
+                    bodies[i].veloc[l] += impulse / mi * nNormal[l];
+                    bodies[k].veloc[l] -= impulse / mk * nNormal[l];
+                }
+            }
+        }
+    }
+
+    for (int i = 0; i < numOfBodies; i++)
+    {
+        for (int j = 0; j < dimension; j++)
+        {
             bodies[i].coord[j] += bodies[i].veloc[j] * deltaTime;
-
-            if (walls)
-            {
-                if (bodies[i].coord[0] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[0] > 0)
-                {
-                    bodies[i].veloc[0] *= -1;
-                }
-                else if (bodies[i].coord[0] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[i].veloc[0] < 0)
-                {
-                    bodies[i].veloc[0] *= -1;
-                }
-                else if (bodies[i].coord[1] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[1] > 0)
-                {
-                    bodies[i].veloc[1] *= -1;
-                }
-                else if (bodies[i].coord[1] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[i].veloc[1] < 0)
-                {
-                    bodies[i].veloc[1] *= -1;
-                }
-            }
-
-            if (collisions)
-            {
-                for (int k = 0; k < numOfBodies; k++)
-                {
-                    if (k != i && doCirclesOverlap(2, bodies[i].coord, radius, bodies[k].coord, radius))
-                    {
-                        float mi = bodies[i].mass;
-                        float mk = bodies[k].mass;
-
-                        std::vector<float> n(dimension);
-                        for (int l = 0; l < dimension; l++)
-                        {
-                            n[l] = bodies[k].coord[l] - bodies[i].coord[l];
-                        }
-
-                        float nMagnitude = vectorMagnitude(n);
-                        std::vector<float> nNormal(dimension);
-                        for (int l = 0; l < dimension; l++)
-                        {
-                            nNormal[l] = n[l] / nMagnitude;
-                        }
-
-                        if (restitutionCoeff == 1.0)
-                        {
-                            if (dimension == 2)
-                            {
-                                std::vector<float> nTangent(2);
-                                nTangent[0] = -nNormal[1];
-                                nTangent[1] = nNormal[0];
-
-                                float viNormal = dotProduct(2, bodies[i].veloc, nNormal);
-                                float viTangent = dotProduct(2, bodies[i].veloc, nTangent);
-                                float vkNormal = dotProduct(2, bodies[k].veloc, nNormal);
-                                float vkTangent = dotProduct(2, bodies[k].veloc, nTangent);
-
-                                float viNormalNew = (viNormal * (mi - mk) + 2 * mk * vkNormal) / (mi + mk);
-                                float vkNormalNew = (vkNormal * (mi - mk) + 2 * mi * viNormal) / (mi + mk);
-
-                                bodies[i].veloc[0] += nNormal[0] * viNormalNew + nTangent[0] * viTangent;
-                                bodies[i].veloc[1] += nNormal[1] * viNormalNew + nTangent[1] * viTangent;
-
-                                bodies[k].veloc[0] += nNormal[0] * vkNormalNew + nTangent[0] * vkTangent;
-                                bodies[k].veloc[1] += nNormal[1] * vkNormalNew + nTangent[1] * vkTangent;
-                            }
-                            else
-                            {
-                                std::vector<float> vRelative(3);
-                                for (int l = 0; l < 3; l++)
-                                {
-                                    vRelative[l] = bodies[i].veloc[l] - bodies[k].veloc[l];
-                                }
-
-                                float vRelNormal = dotProduct(3, vRelative, nNormal);
-                                float impulse = 2 * vRelNormal / (mi + mk);
-
-                                bodies[i].veloc[0] -= nNormal[0] * impulse * mk;
-                                bodies[i].veloc[1] -= nNormal[1] * impulse * mk;
-                                bodies[i].veloc[2] -= nNormal[2] * impulse * mk;
-
-                                bodies[k].veloc[0] += nNormal[0] * impulse * mi;
-                                bodies[k].veloc[1] += nNormal[1] * impulse * mi;
-                                bodies[k].veloc[2] += nNormal[2] * impulse * mi;
-                            }
-                        }
-                        else if (restitutionCoeff == 0.0)
-                        {
-                            for (int l = 0; l < dimension; l++)
-                            {
-                                bodies[i].veloc[l] = bodies[k].veloc[l] = (mi * bodies[i].veloc[l] + mk * bodies[k].veloc[l]) / (mi + mk);
-                            }
-                        }
-                        else
-                        {
-                            std::vector<float> vRelative(dimension);
-                            for (int l = 0; l < dimension; l++)
-                            {
-                                vRelative[l] = bodies[i].veloc[l] - bodies[k].veloc[l];
-                            }
-
-                            float vRelNormal = dotProduct(dimension, vRelative, nNormal);
-                            float impulse = -(1.0 + restitutionCoeff) * vRelNormal / (1.0 / mi + 1.0 / mk);
-
-                            for (int l = 0; l < dimension; l++)
-                            {
-                                bodies[i].veloc[l] += impulse / mi * nNormal[l];
-                            }
-
-                            for (int l = 0; l < dimension; l++)
-                            {
-                                bodies[k].veloc[l] -= impulse / mk * nNormal[l];
-                            }
-                        }
-
-                        break;
-                    }
-                }
-            }
-
             vertices[i * dimension + j] = bodies[i].coord[j] / 1000.0f;
         }
     }

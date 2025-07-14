@@ -36,11 +36,6 @@ namespace gui
             break;
         }
     }
-    void Camera::updateFov(float offset)
-    {
-        fov -= offset;
-        fov = std::max(std::min(fov, 45.0f), 1.0f);
-    }
     void Camera::updateMouse(float xpos, float ypos)
     {
         if (!dontRotate)
