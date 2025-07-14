@@ -1282,24 +1282,17 @@ void drawSimTwoFixedBody(GLFWwindow *window)
     bodies[0].coord[1] += bodies[0].veloc[1] * deltaTime;
 
     if (walls)
-    {
-        if (bodies[0].coord[0] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[0].veloc[0] > 0)
         {
-            bodies[0].veloc[0] *= -1;
+            float w = ImGui::GetWindowWidth() * 2.5f;
+            if (bodies[0].coord[0] + radius > w && bodies[0].veloc[0] > 0)
+                bodies[0].veloc[0] *= -1;
+            if (bodies[0].coord[0] - radius < -w && bodies[0].veloc[0] < 0)
+                bodies[0].veloc[0] *= -1;
+            if (bodies[0].coord[1] + radius > w && bodies[0].veloc[1] > 0)
+                bodies[0].veloc[1] *= -1;
+            if (bodies[0].coord[1] - radius < -w && bodies[0].veloc[1] < 0)
+                bodies[0].veloc[1] *= -1;
         }
-        else if (bodies[0].coord[0] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[0].veloc[0] < 0)
-        {
-            bodies[0].veloc[0] *= -1;
-        }
-        else if (bodies[0].coord[1] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[0].veloc[1] > 0)
-        {
-            bodies[0].veloc[1] *= -1;
-        }
-        else if (bodies[0].coord[1] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[0].veloc[1] < 0)
-        {
-            bodies[0].veloc[1] *= -1;
-        }
-    }
 
     if (collisions)
     {
@@ -1461,22 +1454,15 @@ void drawSimNBodySmall(GLFWwindow *window)
 
             if (walls)
             {
-                if (bodies[i].coord[0] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[0] > 0)
-                {
+                float w = ImGui::GetWindowWidth() * 2.5f;
+                if (bodies[i].coord[0] + radius > w && bodies[i].veloc[0] > 0)
                     bodies[i].veloc[0] *= -1;
-                }
-                else if (bodies[i].coord[0] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[i].veloc[0] < 0)
-                {
+                if (bodies[i].coord[0] - radius < -w && bodies[i].veloc[0] < 0)
                     bodies[i].veloc[0] *= -1;
-                }
-                else if (bodies[i].coord[1] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[1] > 0)
-                {
+                if (bodies[i].coord[1] + radius > w && bodies[i].veloc[1] > 0)
                     bodies[i].veloc[1] *= -1;
-                }
-                else if (bodies[i].coord[1] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[i].veloc[1] < 0)
-                {
+                if (bodies[i].coord[1] - radius < -w && bodies[i].veloc[1] < 0)
                     bodies[i].veloc[1] *= -1;
-                }
             }
 
             if (collisions)
@@ -1634,22 +1620,15 @@ void drawSimNBodyBig(GLFWwindow *window)
             bodies[i].coord[j] += bodies[i].veloc[j] * deltaTime;
             if (walls)
             {
-                if (bodies[i].coord[0] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[0] > 0)
-                {
+                float w = ImGui::GetWindowWidth() * 2.5f;
+                if (bodies[i].coord[0] + radius > w && bodies[i].veloc[0] > 0)
                     bodies[i].veloc[0] *= -1;
-                }
-                else if (bodies[i].coord[0] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[i].veloc[0] < 0)
-                {
+                if (bodies[i].coord[0] - radius < -w && bodies[i].veloc[0] < 0)
                     bodies[i].veloc[0] *= -1;
-                }
-                else if (bodies[i].coord[1] + radius > ImGui::GetWindowWidth() * 2.5 && bodies[i].veloc[1] > 0)
-                {
+                if (bodies[i].coord[1] + radius > w && bodies[i].veloc[1] > 0)
                     bodies[i].veloc[1] *= -1;
-                }
-                else if (bodies[i].coord[1] - radius < ImGui::GetWindowWidth() * -2.5 && bodies[i].veloc[1] < 0)
-                {
+                if (bodies[i].coord[1] - radius < -w && bodies[i].veloc[1] < 0)
                     bodies[i].veloc[1] *= -1;
-                }
             }
         }
     }
