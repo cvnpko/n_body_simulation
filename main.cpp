@@ -1299,56 +1299,48 @@ void drawSimTwoFixedBody(GLFWwindow *window)
     {
         for (int k = 1; k < numOfBodies; k++)
         {
-            if (doCirclesOverlap(2, bodies[0].coord, radius, bodies[k].coord, radius))
+            std::vector<float> n(dimension, 0.0f);
+            float distSqr = 0.0f;
+            for (int l = 0; l < dimension; l++)
             {
-                float mi = bodies[0].mass;
-                float mk = bodies[k].mass;
+                n[l] = bodies[0].coord[l] - bodies[k].coord[l];
+                distSqr += n[l] * n[l];
+            }
 
-                std::vector<float> n(2);
-                n[0] = bodies[k].coord[0] - bodies[0].coord[0];
-                n[1] = bodies[k].coord[1] - bodies[0].coord[1];
+            float rSum = 2 * radius;
+            if (distSqr > rSum * rSum)
+            {
+                continue;
+            }
 
-                float nMagnitude = vectorMagnitude(n);
-                std::vector<float> nNormal(2);
-                nNormal[0] = n[0] / nMagnitude;
-                nNormal[1] = n[1] / nMagnitude;
+            float dist = sqrt(distSqr);
 
-                if (restitutionCoeff == 1.0)
-                {
-                    std::vector<float> nTangent(2);
-                    nTangent[0] = -nNormal[1];
-                    nTangent[1] = nNormal[0];
+            std::vector<float> nNormal(dimension);
+            for (int l = 0; l < dimension; l++)
+            {
+                nNormal[l] = n[l] / dist;
+            }
 
-                    float viNormal = dotProduct(2, bodies[0].veloc, nNormal);
-                    float viTangent = dotProduct(2, bodies[0].veloc, nTangent);
-                    float vkNormal = dotProduct(2, bodies[k].veloc, nNormal);
-                    float vkTangent = dotProduct(2, bodies[k].veloc, nTangent);
+            float m0 = bodies[0].mass;
+            float mk = bodies[k].mass;
 
-                    float viNormalNew = (viNormal * (mi - mk) + 2 * mk * vkNormal) / (mi + mk);
-                    float vkNormalNew = (vkNormal * (mi - mk) + 2 * mi * viNormal) / (mi + mk);
+            std::vector<float> vRel(dimension);
+            for (int l = 0; l < dimension; l++)
+            {
+                vRel[l] = bodies[0].veloc[l] - bodies[k].veloc[l];
+            }
 
-                    bodies[0].veloc[0] += nNormal[0] * viNormalNew + nTangent[0] * viTangent;
-                    bodies[0].veloc[1] += nNormal[1] * viNormalNew + nTangent[1] * viTangent;
-                }
-                else if (restitutionCoeff == 0.0)
-                {
-                    bodies[0].veloc[0] = 0;
-                    bodies[0].veloc[1] = 0;
-                }
-                else
-                {
-                    std::vector<float> vRelative(2);
-                    vRelative[0] = bodies[0].veloc[0] - bodies[k].veloc[0];
-                    vRelative[1] = bodies[0].veloc[1] - bodies[k].veloc[1];
+            float vRelNormal = dotProduct(dimension, vRel, nNormal);
+            if (vRelNormal > 0)
+            {
+                continue;
+            }
 
-                    float vRelNormal = dotProduct(2, vRelative, nNormal);
-                    float impulse = -(1.0 + restitutionCoeff) * vRelNormal / (1.0 / mi + 1.0 / mk);
+            float impulse = -(1.0f + restitutionCoeff) * vRelNormal / (1.0f / m0/* + 1.0f / mk*/);
 
-                    bodies[0].veloc[0] += impulse / mi * nNormal[0];
-                    bodies[0].veloc[1] += impulse / mi * nNormal[1];
-                }
-
-                break;
+            for (int l = 0; l < dimension; l++)
+            {
+                bodies[0].veloc[l] += impulse / m0 * nNormal[l];
             }
         }
     }
