@@ -46,7 +46,6 @@ void drawSimNBodySmall(GLFWwindow *window);
 void drawSimNBodyBig(GLFWwindow *window);
 
 float vectorMagnitude(std::vector<float> &coords);
-bool doCirclesOverlap(int dimension, std::vector<float> &coords1, float r1, std::vector<float> &coords2, float r2);
 float dotProduct(int dimension, std::vector<float> &coords1, std::vector<float> &coords2);
 
 struct trailStruct
@@ -1336,11 +1335,13 @@ void drawSimTwoFixedBody(GLFWwindow *window)
                 continue;
             }
 
-            float impulse = -(1.0f + restitutionCoeff) * vRelNormal / (1.0f / m0/* + 1.0f / mk*/);
-
+            float impulse = -(1.0f + restitutionCoeff) * vRelNormal / (1.0f / m0 + 1.0f/mk);
+            float penetration = rSum - dist;
+            
             for (int l = 0; l < dimension; l++)
             {
                 bodies[0].veloc[l] += impulse / m0 * nNormal[l];
+                bodies[0].coord[l] += (penetration / (1.0f / m0 + 1.0f / mk)) * (1.0f / m0) * nNormal[l];
             }
         }
     }
@@ -1756,18 +1757,6 @@ float vectorMagnitude(std::vector<float> &coords)
         result += coords[i] * coords[i];
     }
     return result;
-}
-
-bool doCirclesOverlap(int dimension, std::vector<float> &coords1, float r1, std::vector<float> &coords2, float r2)
-{
-
-    float distance = 0.0f;
-    for (int i = 0; i < dimension; i++)
-    {
-        distance += (coords1[i] - coords2[i]) * (coords1[i] - coords2[i]);
-    }
-
-    return distance <= (r1 + r2) * (r1 + r2);
 }
 
 float dotProduct(int dimension, std::vector<float> &coords1, std::vector<float> &coords2)
