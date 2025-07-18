@@ -1502,6 +1502,14 @@ void drawSimNBodySmall(GLFWwindow *window)
                     bodies[i].veloc[l] += impulse / mi * nNormal[l];
                     bodies[k].veloc[l] -= impulse / mk * nNormal[l];
                 }
+
+                float overlap = 0.5f * (rSum - dist);
+                for (int l = 0; l < dimension; l++)
+                {
+                    float correction = overlap * nNormal[l];
+                    bodies[i].coord[l] += correction * (mk / (mi + mk));
+                    bodies[k].coord[l] -= correction * (mi / (mi + mk));
+                }
             }
         }
     }
@@ -1740,6 +1748,13 @@ void drawSimThreeBody3D(GLFWwindow *window)
                     bodies[i].veloc[l] += impulse / mi * nNormal[l];
                     bodies[k].veloc[l] -= impulse / mk * nNormal[l];
                 }
+                float overlap = 0.5f * (rSum - dist);
+                for (int l = 0; l < dimension; l++)
+                {
+                    float correction = overlap * nNormal[l];
+                    bodies[i].coord[l] += correction * (mk / (mi + mk));
+                    bodies[k].coord[l] -= correction * (mi / (mi + mk));
+                }
             }
         }
     }
@@ -1785,7 +1800,7 @@ float dotProduct(int dimension, std::vector<float> &coords1, std::vector<float> 
 GLFWimage loadIcon(const char *filename)
 {
     int width, height, channels;
-    unsigned char *data = stbi_load(filename, &width, &height, &channels, 4); // Load image with RGBA channels
+    unsigned char *data = stbi_load(filename, &width, &height, &channels, 4);
 
     GLFWimage icon;
     icon.width = width;
