@@ -1167,6 +1167,14 @@ void drawSimThreeBody2D(GLFWwindow *window)
                     bodies[i].veloc[l] += impulse / mi * nNormal[l];
                     bodies[k].veloc[l] -= impulse / mk * nNormal[l];
                 }
+
+                float overlap = 0.5f * (rSum - dist);
+                for (int l = 0; l < dimension; l++)
+                {
+                    float correction = overlap * nNormal[l];
+                    bodies[i].coord[l] += correction * (mk / (mi + mk));
+                    bodies[k].coord[l] -= correction * (mi / (mi + mk));
+                }
             }
         }
     }
@@ -1296,13 +1304,14 @@ void drawSimTwoFixedBody(GLFWwindow *window)
 
     if (collisions)
     {
-        for (int k = 1; k < numOfBodies; k++)
+        int i = 0;
+        for (int k = i + 1; k < numOfBodies; k++)
         {
             std::vector<float> n(dimension, 0.0f);
             float distSqr = 0.0f;
             for (int l = 0; l < dimension; l++)
             {
-                n[l] = bodies[0].coord[l] - bodies[k].coord[l];
+                n[l] = bodies[i].coord[l] - bodies[k].coord[l];
                 distSqr += n[l] * n[l];
             }
 
@@ -1320,13 +1329,13 @@ void drawSimTwoFixedBody(GLFWwindow *window)
                 nNormal[l] = n[l] / dist;
             }
 
-            float m0 = bodies[0].mass;
+            float mi = bodies[i].mass;
             float mk = bodies[k].mass;
 
             std::vector<float> vRel(dimension);
             for (int l = 0; l < dimension; l++)
             {
-                vRel[l] = bodies[0].veloc[l] - bodies[k].veloc[l];
+                vRel[l] = bodies[i].veloc[l] - bodies[k].veloc[l];
             }
 
             float vRelNormal = dotProduct(dimension, vRel, nNormal);
@@ -1335,13 +1344,17 @@ void drawSimTwoFixedBody(GLFWwindow *window)
                 continue;
             }
 
-            float impulse = -(1.0f + restitutionCoeff) * vRelNormal / (1.0f / m0 + 1.0f/mk);
-            float penetration = rSum - dist;
-            
+            float impulse = -(1.0f + restitutionCoeff) * vRelNormal / (1.0f / mi);
+
             for (int l = 0; l < dimension; l++)
             {
-                bodies[0].veloc[l] += impulse / m0 * nNormal[l];
-                bodies[0].coord[l] += (penetration / (1.0f / m0 + 1.0f / mk)) * (1.0f / m0) * nNormal[l];
+                bodies[i].veloc[l] += impulse / mi * nNormal[l];
+            }
+
+            float overlap = rSum - dist;
+            for (int l = 0; l < dimension; l++)
+            {
+                bodies[i].coord[l] += overlap * nNormal[l];
             }
         }
     }
