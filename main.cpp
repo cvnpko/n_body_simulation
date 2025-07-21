@@ -325,7 +325,7 @@ void drawMenu()
                 dimension = 2;
                 break;
             case sim::Option::ThreeBody3D:
-                radius = 100.0f;
+                radius = 10.0f;
                 numOfBodies = 3;
                 dimension = 3;
                 break;
@@ -377,7 +377,7 @@ void drawMenu()
                     bodies[i].mass = std::max((float)rand() / RAND_MAX, 0.1f) * 0.1f;
                     for (int j = 0; j < dimension; j++)
                     {
-                        bodies[i].coord[j] = ((float)rand() / RAND_MAX - 0.5f) * 1000.0f;
+                        bodies[i].coord[j] = ((float)rand() / RAND_MAX - 0.5f) * 2000.0f;
                         bodies[i].veloc[j] = ((float)rand() / RAND_MAX - 0.5f) * 50.0f;
                     }
                 }
@@ -388,22 +388,22 @@ void drawMenu()
                 bodies[0].coord[2] = 0.0f;
                 bodies[0].veloc[0] = 0.0f;
                 bodies[0].veloc[1] = 0.0f;
-                bodies[0].coord[2] = 0.0f;
+                bodies[0].veloc[2] = 0.0f;
                 bodies[0].mass = 5.0f;
                 bodies[1].coord[0] = 0.0f;
                 bodies[1].coord[1] = 0.0f;
                 bodies[1].coord[2] = 0.0f;
-                bodies[1].veloc[0] = 0.0f;
+                bodies[1].veloc[0] = -100.0f;
                 bodies[1].veloc[1] = 0.0f;
-                bodies[1].coord[2] = 0.0f;
+                bodies[1].veloc[2] = 0.0f;
                 bodies[1].mass = 5.0f;
-                bodies[2].coord[0] = 200.0f;
-                bodies[2].coord[1] = 0.0f;
-                bodies[2].coord[2] = 0.0f;
+                bodies[2].coord[0] = -200.0f;
+                bodies[2].coord[1] = 500.0f;
+                bodies[2].coord[2] = 200.0f;
                 bodies[2].veloc[0] = 0.0f;
                 bodies[2].veloc[1] = 0.0f;
-                bodies[2].coord[2] = 0.0f;
-                bodies[2].mass = 5.0f;
+                bodies[2].veloc[2] = 0.0f;
+                bodies[2].mass = 200.0f;
                 break;
             }
         }
